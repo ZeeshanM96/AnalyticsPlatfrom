@@ -1,0 +1,432 @@
+<!-- <!DOCTYPE html> -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white px-3 shadow-sm">
+    <a class="navbar-brand" href="#">
+      <img src="/static/aws_digital_logo.png" width="35" height="35" class="d-inline-block align-top" alt="Logo">
+      My Digital Analytics Dashboard
+    </a>
+
+
+<div class="ms-auto">
+  <div class="dropdown">
+    <a class="btn btn-success dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+       data-bs-toggle="dropdown" aria-expanded="false">
+       <img width="30" height="30" src="https://img.icons8.com/ios-filled/50/settings.png" alt="settings" style="filter: brightness(0) invert(1);"/>
+    </a>
+    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink">
+      <a class="dropdown-item" href="#"><strong>Name:</strong> <span id="userName"></span></a>
+      <a class="dropdown-item" href="#"><strong>Email:</strong> <span id="userEmail"></span></a>
+      <a class="dropdown-item" href="#"><strong>Role:</strong> <span id="userRole"></span></a>
+      <a class="dropdown-item" href="#"><strong>Source:</strong> <span id="userSource"></span></a>
+      <div class="dropdown-divider"></div>
+      <button id="setPreferencesBtn" class="dropdown-item text-primary">Set Preferences</button>
+      <button id="logoutBtn" class="dropdown-item text-danger">Logout</button>
+    </div>
+  </div>
+</div>
+  </nav>
+
+    <div class="container mt-5">
+      <h2 id="welcomeMessage" class="text-center"></h2>
+    </div>
+    <hr>
+    <!-- Overall Status Section (Batchs, Alerts Services) -->
+ <div id="alertContainer"></div>
+<div class="container-fluid px-4 my-3 py-2" id="overallStatusCard">
+  
+  <div class="card shadow-sm">
+    <div class="card-header bg-white">
+      <strong>Overall Status</strong>
+    </div>
+    <div class="card-body">
+      <div class="row g-4">
+        <!-- Total Batches (Today) -->
+        <div class="col-md-4" id="totalBatchesCard">
+          <div class="card text-center border-start border-primary border-4 shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted">Total Batches (Today)</h6>
+              <h4 id="batchTodayCount">--</h4>
+              <small class="text-muted">Yesterday: <span id="batchYesterdayCount">--</span></small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Services Status -->
+        <div class="col-md-4" id="servicesStatusCard">
+          <div class="card text-center border-start border-success border-4 shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted">Services Status</h6>
+              <h4>
+                <span id="runningServices">--</span> /
+                <span id="totalServices">--</span>
+              </h4>
+              <small class="text-muted">Running / Total</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Critical Alerts -->
+        <div class="col-md-4" id="criticalAlertsCard">
+          <div class="card text-center border-start border-danger border-4 shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted">Critical Alerts</h6>
+              <h4 id="alertsToday">--</h4>
+              <small class="text-muted">Yesterday: <span id="alertsYesterday">--</span></small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <hr>
+  </div>
+</div>
+
+<div class="container-fluid px-4 my-3 py-2" >
+    <div class="row justify-content-center" id="RealTimeCard">
+      <div class="col-lg-10">
+        <div class="card shadow rounded">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">📈 Real-Time Data Graph</h5>
+            <small class="text-light">Live streaming of Data</small>
+          </div>
+          <div class="card-body">
+            <div class="chart-container" style="position: relative; height:400px; width:100%;">
+              <canvas id="chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Event Trends Section -->
+  <!-- Combined Row for Event Trends and Service Metrics -->
+<div class="container-fluid px-4">
+  <div class="row">
+    <!-- Event Trends Section -->
+    <div class="col-md-6" id="EventTrends">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white pb-1">
+          <strong>Event Trends</strong>
+        </div>
+        <div class="card-body">
+          <!-- Filters Row -->
+          <div class="row g-3 align-items-end mb-4">
+            <div class="col-md-6">
+              <label for="eventTypesDropdown" class="form-label">Event Types</label>
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="eventTypesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  Select Event Types
+                </button>
+                <ul class="dropdown-menu p-2 w-100" id="eventTypesList" style="max-height: 300px; overflow-y: auto;"></ul>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label for="fromDate" class="form-label">From</label>
+              <input type="date" class="form-control" id="fromDate" required>
+            </div>
+
+            <div class="col-md-3">
+              <label for="toDate" class="form-label">To</label>
+              <input type="date" class="form-control" id="toDate" required>
+            </div>
+
+            <div class="col-md-12 text-end">
+              <button id="filterBtn" class="btn btn-outline-success w-100">Search</button>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div class="card border-0">
+            <div class="card-body pt-2">
+              <div id="eventChartContainer">
+                <canvas id="eventChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Service Metrics Section -->
+    <div class="col-md-6" id="serviceMetricsCard">
+      <div class="card shadow-sm mb-4 h-100">
+        <div class="card-header bg-white">
+          <strong>Service Metrics</strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-3 mb-4">
+            <!-- Service Name -->
+            <div class="col-md-6">
+              <label class="form-label">Service</label>
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="serviceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  Select Service(s)
+                </button>
+                <ul class="dropdown-menu p-2 w-100" id="serviceDropdownList" style="max-height: 300px; overflow-y: auto;"></ul>
+              </div>
+            </div>
+
+            <!-- Metric Type -->
+            <div class="col-md-6">
+              <label class="form-label">Metric Type</label>
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="metricTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  Select Metric(s)
+                </button>
+                <ul class="dropdown-menu p-2 w-100" id="metricDropdownList" style="max-height: 300px; overflow-y: auto;"></ul>
+              </div>
+            </div>
+
+            <!-- Date Filters -->
+            <div class="col-md-6">
+              <label class="form-label">From</label>
+              <input type="date" class="form-control" id="metricFromDate">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">To</label>
+              <input type="date" class="form-control" id="metricToDate">
+            </div>
+
+            <!-- Search -->
+            <div class="col-md-12 text-end">
+              <button id="metricSearchBtn" class="btn btn-outline-success">Search</button>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="serviceMetricChartContainer" >
+  <canvas id="serviceMetricChart" ></canvas>
+</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Source Metrics Section -->
+    <div class="col-md-6" id="sourceMetricsCard">
+  <div class="card shadow-sm mb-4 h-100">
+    <div class="card-header bg-white">
+      <strong>Source Metrics</strong>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label class="form-label">Source</label>
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="sourceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              Select Source(s)
+            </button>
+            <ul class="dropdown-menu p-2 w-100" id="sourceDropdownList" style="max-height: 300px; overflow-y: auto;"></ul>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+  <label class="form-label">Event Types</label>
+  <div class="dropdown">
+    <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="sourceEventTypesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+      Select Event Types
+    </button>
+    <ul class="dropdown-menu p-2 w-100" id="sourceEventTypesList" style="max-height: 300px; overflow-y: auto;"></ul>
+  </div>
+</div>
+
+        <div class="col-md-6">
+          <label class="form-label">From</label>
+          <input type="date" class="form-control" id="sourceFromDate">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">To</label>
+          <input type="date" class="form-control" id="sourceToDate">
+        </div>
+
+        <div class="col-md-12 text-end">
+          <button id="sourceMetricSearchBtn" class="btn btn-outline-success">Search</button>
+        </div>
+      </div>
+
+      <div id="sourceMetricChartContainer">
+        <canvas id="sourceMetricChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </div>
+</div>
+
+    <!-- Filters + Chart Container -->
+    <div class="container-fluid px-4 mt-5 mb-4">
+  <div class="row">
+    
+    <!-- Alerts by Batch and Severity -->
+    <div class="col-md-6" id="AlertsByBatch">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <strong>Alerts by Batch and Severity</strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-3 align-items-end mb-4">
+            <!-- Batch ID Filter -->
+            <div class="col-md-6">
+              <label for="batchDropdown" class="form-label">Batch IDs</label>
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="batchDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  Select Batch(s)
+                </button>
+                <ul class="dropdown-menu p-2 w-100" id="batchDropdownList" style="max-height: 300px; overflow-y: auto;">
+                  <!-- Checkboxes inserted dynamically -->
+                </ul>
+              </div>
+            </div>
+
+            <!-- Severity Filter -->
+            <div class="col-md-6">
+              <label for="severityDropdown" class="form-label">Severity</label>
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="severityDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  Select type(s)
+                </button>
+                <ul class="dropdown-menu p-2 w-100" id="severityDropdownList" style="max-height: 300px; overflow-y: auto;">
+                  <!-- Checkboxes inserted dynamically -->
+                </ul>
+              </div>
+            </div>
+
+            <!-- Date From -->
+            <div class="col-md-6">
+              <label for="alertFrom" class="form-label">From</label>
+              <input type="date" id="alertFrom" class="form-control" />
+            </div>
+
+            <!-- Date To -->
+            <div class="col-md-6">
+              <label for="alertTo" class="form-label">To</label>
+              <input type="date" id="alertTo" class="form-control" />
+            </div>
+
+            <!-- Search Button -->
+            <div class="col-md-12 text-end">
+              <button class="btn btn-outline-success" id="alertFilterBtn">Search</button>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="alertChartContainer">
+  <canvas id="alertBatchChart"></canvas>
+</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Issue Resolution -->
+    <div class="col-md-6" id="IssueResolution">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <strong>Issue Resolution</strong>
+        </div>
+        <div class="card-body">
+          <div class="row g-3 mb-4">
+            <!-- SourceName -->
+            <div class="col-md-6">
+              <label class="form-label">Source</label>
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="sourceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  Select Source(s)
+                </button>
+                <ul class="dropdown-menu p-2 w-100" id="issueSourceDropdownList" style="max-height: 300px; overflow-y: auto;"></ul>
+              </div>
+            </div>
+
+            <!-- Severity -->
+            <div class="col-md-6">
+              <label class="form-label">Severity</label>
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" id="resSeverityDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                  Select type
+                </button>
+                <ul class="dropdown-menu p-2 w-100" id="resSeverityDropdownList" style="max-height: 300px; overflow-y: auto;"></ul>
+              </div>
+            </div>
+
+            <!-- Date From -->
+            <div class="col-md-6">
+              <label for="resFromDate" class="form-label">From</label>
+              <input type="date" class="form-control" id="resFromDate">
+            </div>
+
+            <!-- Date To -->
+            <div class="col-md-6">
+              <label for="resToDate" class="form-label">To</label>
+              <input type="date" class="form-control" id="resToDate">
+            </div>
+
+            <!-- Search Button -->
+            <div class="col-md-12 text-end">
+              <button id="issueResolutionBtn" class="btn btn-outline-success">Search</button>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div id="resolutionChartContainer">
+  <canvas id="issueResolutionChart"></canvas>
+</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+    <hr>
+    <footer class="bg-white text-center text-lg-start mt-5">
+      <div class="text-center p-3">
+        © 2025 Me Digital. All rights reserved.
+      </div>
+    </footer>
+
+    <div class="modal fade" id="preferencesModal" tabindex="-1" aria-labelledby="preferencesModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="preferencesModalLabel">Set Preferences for <span id="modalUserName"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="preferencesContent" class="table-responsive">
+    <!-- Preferences will be rendered here -->
+  </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closePreferences">Close</button>
+        <button type="button" class="btn btn-primary" id="savePreferencesBtn">Update Preferences</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+  <div id="preferencesToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastMessage">Preferences updated successfully.</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
+     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script type="module" src="/static/js/dashboard.js"></script>
+  </body>
+</html>

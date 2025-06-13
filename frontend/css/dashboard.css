@@ -1,0 +1,15 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.container {
+  max-width: 600px;
+}
+
+.alert {
+  margin-top: 20px;
+}
+
+.filter-body {
+  min-height: 200px;
+}

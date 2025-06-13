@@ -1,0 +1,14 @@
+# ---- BACKEND ----
+fastapi
+uvicorn[standard]
+pydantic
+sqlalchemy
+pyodbc
+python-dotenv
+pyjwt
+
+# ---- FRONTEND / SHARED ----
+httpx
+requests
+pydantic[email]
+
