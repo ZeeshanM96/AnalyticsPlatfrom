@@ -4,7 +4,7 @@ import pyodbc
 def get_connection():
     conn = pyodbc.connect(
         "DRIVER={ODBC Driver 17 for SQL Server};"
-        "SERVER=ZEESHANMAJEED\MSSQLSERVER01;"
+        "SERVER=your_server_name;"
         "DATABASE=AWS;"
         "Trusted_Connection=yes;"
     )
