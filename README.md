@@ -1,4 +1,4 @@
-# Precis Digital Analytics Dashboard
+# Digital Analytics Dashboard
 
 ## Description
 
