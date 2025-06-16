@@ -2,7 +2,7 @@
 
 ## Description
 
-Precis Digital Analytics Dashboard is a full-stack web application for real-time monitoring and analytics of business events, alerts, and service metrics. It features secure JWT authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights. The platform supports real-time data updates via WebSockets, customizable views, and user preferences for a tailored analytics experience.
+Digital Analytics Dashboard is a full-stack web application for real-time monitoring and analytics of business events, alerts, and service metrics. It features secure JWT authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights. The platform supports real-time data updates via WebSockets, customizable views, and user preferences for a tailored analytics experience.
 
 ---
 
