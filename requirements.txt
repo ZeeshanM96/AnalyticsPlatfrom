@@ -10,7 +10,6 @@ black
 flake8
 pytest
 
-
 # ---- FRONTEND / SHARED ----
 httpx
 requests
