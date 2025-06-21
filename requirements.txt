@@ -6,6 +6,10 @@ sqlalchemy
 pyodbc
 python-dotenv
 pyjwt
+black
+flake8
+pytest
+
 
 # ---- FRONTEND / SHARED ----
 httpx

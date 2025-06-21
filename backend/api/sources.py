@@ -5,8 +5,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from ..auth import decode_jwt_token, is_admin, validate_date_range
 from ..db import get_connection
 from collections import defaultdict
+
 router = APIRouter()
 security = HTTPBearer()
+
 
 @router.get("/getsources")
 def get_sources():
@@ -38,7 +40,9 @@ def get_sources_by_id(credentials: HTTPAuthorizationCredentials = Depends(securi
     if is_admin(source_id):
         cursor.execute("SELECT SourceName FROM Sources ORDER BY SourceName")
     else:
-        cursor.execute("SELECT SourceName FROM Sources WHERE SourceID = ?", (source_id,))
+        cursor.execute(
+            "SELECT SourceName FROM Sources WHERE SourceID = ?", (source_id,)
+        )
 
     return {"sources": [row[0] for row in cursor.fetchall()]}
 
@@ -49,7 +53,7 @@ def get_resolution_summary(
     to_date: str,
     sources: str = "",
     severities: str = "",
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     validate_date_range(from_date, to_date)
     try:
@@ -60,7 +64,9 @@ def get_resolution_summary(
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (payload["user_id"],))
+        cursor.execute(
+            "SELECT SourceID FROM Users WHERE UserID = ?", (payload["user_id"],)
+        )
         row = cursor.fetchone()
         if not row:
             raise HTTPException(status_code=403, detail="User source not found")
@@ -75,7 +81,12 @@ def get_resolution_summary(
 
         if source_list:
             placeholders = ",".join("?" * len(source_list))
-            filters.append(f"a.SourceID IN (SELECT s2.SourceID FROM Sources s2 WHERE s2.SourceName IN ({placeholders}))")
+            filters.append(
+                (
+                    "a.SourceID IN (SELECT s2.SourceID FROM Sources s2 "
+                    f"WHERE s2.SourceName IN ({placeholders}))"
+                )
+            )
             params.extend(source_list)
         elif user_source_id != 4:
             filters.append("a.SourceID = ?")
@@ -88,18 +99,19 @@ def get_resolution_summary(
 
         where_clause = " AND ".join(filters)
 
-        query = f"""
-            SELECT 
-                s.SourceName,
-                a.Severity,
-                CASE WHEN a.ResolvedAt IS NULL THEN 'Unresolved' ELSE 'Resolved' END AS Status,
-                COUNT(*) as Count
-            FROM Alerts a
-            JOIN Sources s ON a.SourceID = s.SourceID
-            WHERE {where_clause}
-            GROUP BY s.SourceName, a.Severity, CASE WHEN a.ResolvedAt IS NULL THEN 'Unresolved' ELSE 'Resolved' END
-            ORDER BY s.SourceName, a.Severity
-        """
+        query = (
+            "SELECT "
+            "s.SourceName, "
+            "a.Severity, "
+            "CASE WHEN a.ResolvedAt IS NULL THEN 'Unresolved' ELSE 'Resolved' END AS Status, "
+            "COUNT(*) as Count "
+            "FROM Alerts a "
+            "JOIN Sources s ON a.SourceID = s.SourceID "
+            f"WHERE {where_clause} "
+            "GROUP BY s.SourceName, a.Severity, "
+            "CASE WHEN a.ResolvedAt IS NULL THEN 'Unresolved' ELSE 'Resolved' END "
+            "ORDER BY s.SourceName, a.Severity"
+        )
 
         cursor.execute(query, params)
         rows = cursor.fetchall()
@@ -129,29 +141,31 @@ def get_resolution_summary(
             "Info-Resolved": "#5bc0de",
             "Info-Unresolved": "#dff0d8",
             "Warning-Resolved": "#f7ecb5",
-            "Warning-Unresolved": "#f0ad4e"
+            "Warning-Unresolved": "#f0ad4e",
         }
 
         for severity in severity_levels:
-            datasets.append({
-                "label": f"{severity} - Resolved",
-                "backgroundColor": color_map.get(f"{severity}-Resolved", "#ccc"),
-                "data": get_data(resolved_map, severity),
-                "stack": severity
-            })
-            datasets.append({
-                "label": f"{severity} - Unresolved",
-                "backgroundColor": color_map.get(f"{severity}-Unresolved", "#ccc"),
-                "data": get_data(unresolved_map, severity),
-                "stack": severity
-            })
+            datasets.append(
+                {
+                    "label": f"{severity} - Resolved",
+                    "backgroundColor": color_map.get(f"{severity}-Resolved", "#ccc"),
+                    "data": get_data(resolved_map, severity),
+                    "stack": severity,
+                }
+            )
+            datasets.append(
+                {
+                    "label": f"{severity} - Unresolved",
+                    "backgroundColor": color_map.get(f"{severity}-Unresolved", "#ccc"),
+                    "data": get_data(unresolved_map, severity),
+                    "stack": severity,
+                }
+            )
 
-        return {
-            "labels": labels,
-            "datasets": datasets
-        }
+        return {"labels": labels, "datasets": datasets}
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

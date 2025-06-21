@@ -1,6 +1,6 @@
 # backend/api/auth.py
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from ..db import get_connection
 from ..auth import verify_password, create_jwt_token, hash_password, decode_jwt_token
@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 router = APIRouter()
 security = HTTPBearer()
-VALID_ROLES = ['Client', 'Developer']
+VALID_ROLES = ["Client", "Developer"]
 
 
 class LoginRequest(BaseModel):
@@ -22,11 +22,14 @@ def login(req: LoginRequest):
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT UserID, Email, HashedPassword 
-        FROM Users 
+    cursor.execute(
+        """
+        SELECT UserID, Email, HashedPassword
+        FROM Users
         WHERE Email = ?
-    """, req.email)
+    """,
+        req.email,
+    )
 
     row = cursor.fetchone()
     if not row:
@@ -35,7 +38,10 @@ def login(req: LoginRequest):
     user_id, email, hashed_password_db = row
 
     if not isinstance(hashed_password_db, bytes):
-        raise HTTPException(status_code=500, detail="Database error: Hashed password is not in expected format")
+        raise HTTPException(
+            status_code=500,
+            detail="Database error: Hashed password is not in expected format",
+        )
 
     if not verify_password(req.password, bytes(hashed_password_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -57,10 +63,14 @@ def signup(req: SignupRequest):
 
     cursor.execute("SELECT 1 FROM Users WHERE Email = ?", (req.email,))
     if cursor.fetchone():
-        raise HTTPException(status_code=400, detail="User with this email already exists")
+        raise HTTPException(
+            status_code=400, detail="User with this email already exists"
+        )
 
-    if req.role == 'Client' and req.source == 'AWS':
-        raise HTTPException(status_code=400, detail="Clients cannot choose 'AWS' as a source")
+    if req.role == "Client" and req.source == "AWS":
+        raise HTTPException(
+            status_code=400, detail="Clients cannot choose 'AWS' as a source"
+        )
 
     if not req.source:
         raise HTTPException(status_code=400, detail="Source is required")
@@ -73,10 +83,16 @@ def signup(req: SignupRequest):
     source_id = source_row[0]
     hashed_pw = hash_password(req.password)
 
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO Users (Email, Role, CreatedAt, SourceID, HashedPassword)
         VALUES (?, ?, SYSDATETIME(), ?, ?)
-    """, req.email, req.role, source_id, hashed_pw)
+    """,
+        req.email,
+        req.role,
+        source_id,
+        hashed_pw,
+    )
 
     conn.commit()
     return {"message": "User registered successfully"}
@@ -92,9 +108,12 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT Email, Role, SourceID FROM Users WHERE UserID = ?
-    """, payload["user_id"])
+    """,
+        payload["user_id"],
+    )
     row = cursor.fetchone()
 
     if not row:
@@ -106,8 +125,4 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     source_row = cursor.fetchone()
     source_name = source_row[0] if source_row else "Unknown"
 
-    return {
-        "email": email,
-        "role": role,
-        "source": source_name
-    }
+    return {"email": email, "role": role, "source": source_name}

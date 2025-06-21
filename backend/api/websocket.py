@@ -1,13 +1,13 @@
 from fastapi import WebSocket, WebSocketDisconnect
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter
+from fastapi.security import HTTPBearer
 from backend.auth import decode_jwt_token
 import asyncio
 from ..db import get_connection
-from ..auth import is_admin
 
 router = APIRouter()
 security = HTTPBearer()
+
 
 @router.websocket("/ws/data")
 async def websocket_endpoint(websocket: WebSocket):
@@ -44,26 +44,32 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             # Only fetch events from this user's source
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT e.id, d.source_id, d.metric_name, d.value, d.timestamp
                 FROM EventLog e
                 JOIN RealTimeData d ON e.data_id = d.id
                 WHERE e.id > ? AND d.source_id = ?
                 ORDER BY e.id ASC
-            """, last_event_id, source_id)
+            """,
+                last_event_id,
+                source_id,
+            )
             rows = cursor.fetchall()
 
             for row in rows:
                 event_id, event_source_id, metric_name, value, timestamp = row
                 last_event_id = event_id
 
-                await websocket.send_json({
-                    "id": event_id,
-                    "source_id": event_source_id,
-                    "metric_name": metric_name,
-                    "value": value,
-                    "timestamp": timestamp.isoformat()
-                })
+                await websocket.send_json(
+                    {
+                        "id": event_id,
+                        "source_id": event_source_id,
+                        "metric_name": metric_name,
+                        "value": value,
+                        "timestamp": timestamp.isoformat(),
+                    }
+                )
 
             await asyncio.sleep(1)
     except WebSocketDisconnect:
@@ -71,5 +77,3 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"WebSocket error: {e}")
         await websocket.close()
-
-

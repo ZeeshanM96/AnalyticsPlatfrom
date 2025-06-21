@@ -3,8 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.api import (
-    auth, sources, events, alerts, services,
-    preferences, metrics, frontend, auth, websocket
+    auth,
+    sources,
+    events,
+    alerts,
+    services,
+    preferences,
+    metrics,
+    frontend,
+    websocket,
 )
 
 app = FastAPI()

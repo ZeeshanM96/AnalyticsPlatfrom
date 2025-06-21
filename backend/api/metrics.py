@@ -3,7 +3,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List
-from collections import defaultdict
 from ..auth import decode_jwt_token, validate_date_range
 from ..db import get_connection
 
@@ -17,7 +16,7 @@ def get_source_metric_summary(
     to_date: str = Query(...),
     sources: List[str] = Query(...),
     event_type: List[str] = Query(...),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     validate_date_range(from_date, to_date)
     payload = decode_jwt_token(credentials.credentials)
@@ -35,14 +34,17 @@ def get_source_metric_summary(
 
     placeholders_src = ",".join("?" for _ in sources)
     cursor.execute(
-        f"SELECT SourceID, SourceName FROM Sources WHERE SourceName IN ({placeholders_src})", sources
+        f"SELECT SourceID, SourceName FROM Sources WHERE SourceName IN ({placeholders_src})",
+        sources,
     )
     id_lookup = cursor.fetchall()
 
     source_map = {name: sid for sid, name in id_lookup}
     missing_sources = [s for s in sources if s not in source_map]
     if missing_sources:
-        raise HTTPException(status_code=400, detail=f"Invalid source(s): {missing_sources}")
+        raise HTTPException(
+            status_code=400, detail=f"Invalid source(s): {missing_sources}"
+        )
 
     source_ids = list(source_map.values())
 
@@ -75,15 +77,11 @@ def get_source_metric_summary(
 
     datasets = []
     for metric, src_data in grouped.items():
-        datasets.append({
-            "label": metric,
-            "data": [src_data.get(s, 0) for s in all_sources]
-        })
+        datasets.append(
+            {"label": metric, "data": [src_data.get(s, 0) for s in all_sources]}
+        )
 
-    return {
-        "labels": all_sources,
-        "datasets": datasets
-    }
+    return {"labels": all_sources, "datasets": datasets}
 
 
 @router.get("/getmetricbytypes")
@@ -95,7 +93,9 @@ def get_metric_types(credentials: HTTPAuthorizationCredentials = Depends(securit
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT DISTINCT MetricType FROM AggregatedMetrics ORDER BY MetricType")
+    cursor.execute(
+        "SELECT DISTINCT MetricType FROM AggregatedMetrics ORDER BY MetricType"
+    )
     rows = cursor.fetchall()
 
     return {"metrics": [row[0] for row in rows]}
