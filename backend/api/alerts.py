@@ -43,7 +43,7 @@ def get_critical_alerts(credentials: HTTPAuthorizationCredentials = Depends(secu
     yesterday = today - timedelta(days=1)
 
     base_query = """
-        SELECT 
+        SELECT
             CAST(TriggeredAt AS DATE) as alert_date,
             COUNT(*)
         FROM Alerts
@@ -64,7 +64,7 @@ def get_critical_alerts(credentials: HTTPAuthorizationCredentials = Depends(secu
     counts = {row[0].isoformat(): row[1] for row in rows}
     return {
         "today": counts.get(today.isoformat(), 0),
-        "yesterday": counts.get(yesterday.isoformat(), 0)
+        "yesterday": counts.get(yesterday.isoformat(), 0),
     }
 
 
@@ -74,7 +74,7 @@ def get_alert_summary(
     to_date: str,
     batches: Optional[str] = "",
     severities: Optional[str] = "",
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     """
     Get a summary of alerts grouped by batch and severity for a given date range.
@@ -120,7 +120,7 @@ def get_alert_summary(
     severity_list = [s.strip() for s in severities.split(",") if s.strip()]
 
     query = """
-        SELECT 
+        SELECT
             BatchID,
             Severity,
             COUNT(*) as count
@@ -158,17 +158,16 @@ def get_alert_summary(
     sorted_batches = sorted(batch_set)
     datasets = []
     for alert_type, batch_counts in result.items():
-        datasets.append({
-            "label": alert_type,
-            "data": [batch_counts.get(bid, 0) for bid in sorted_batches],
-            "borderWidth": 2,
-            "fill": False
-        })
+        datasets.append(
+            {
+                "label": alert_type,
+                "data": [batch_counts.get(bid, 0) for bid in sorted_batches],
+                "borderWidth": 2,
+                "fill": False,
+            }
+        )
 
-    return {
-        "labels": sorted_batches,
-        "datasets": datasets
-    }
+    return {"labels": sorted_batches, "datasets": datasets}
 
 
 @router.get("/getalertbytypes")
@@ -200,7 +199,9 @@ def get_alert_types(credentials: HTTPAuthorizationCredentials = Depends(security
     if is_admin(source_id):
         cursor.execute("SELECT DISTINCT AlertType FROM Alerts")
     else:
-        cursor.execute("SELECT DISTINCT AlertType FROM Alerts WHERE SourceID = ?", (source_id,))
+        cursor.execute(
+            "SELECT DISTINCT AlertType FROM Alerts WHERE SourceID = ?", (source_id,)
+        )
 
     return {"alertTypes": [row[0] for row in cursor.fetchall()]}
 
@@ -233,19 +234,24 @@ def get_alert_batches(credentials: HTTPAuthorizationCredentials = Depends(securi
     source_id = row[0]
 
     if is_admin(source_id):
-        cursor.execute("""
-            SELECT DISTINCT BatchID 
-            FROM Batches 
-            WHERE BatchID IS NOT NULL 
+        cursor.execute(
+            """
+            SELECT DISTINCT BatchID
+            FROM Batches
+            WHERE BatchID IS NOT NULL
             ORDER BY BatchID
-        """)
+        """
+        )
     else:
-        cursor.execute("""
-            SELECT DISTINCT BatchID 
-            FROM Batches 
-            WHERE BatchID IS NOT NULL AND SourceID = ? 
+        cursor.execute(
+            """
+            SELECT DISTINCT BatchID
+            FROM Batches
+            WHERE BatchID IS NOT NULL AND SourceID = ?
             ORDER BY BatchID
-        """, (source_id,))
+        """,
+            (source_id,),
+        )
 
     return {"batchIds": [row[0] for row in cursor.fetchall()]}
 
@@ -279,6 +285,9 @@ def get_alert_severities(credentials: HTTPAuthorizationCredentials = Depends(sec
     if is_admin(source_id):
         cursor.execute("SELECT DISTINCT Severity FROM Alerts ORDER BY Severity")
     else:
-        cursor.execute("SELECT DISTINCT Severity FROM Alerts WHERE SourceID = ? ORDER BY Severity", (source_id,))
+        cursor.execute(
+            "SELECT DISTINCT Severity FROM Alerts WHERE SourceID = ? ORDER BY Severity",
+            (source_id,),
+        )
 
     return {"severities": [row[0] for row in cursor.fetchall()]}

@@ -10,6 +10,7 @@ from collections import defaultdict
 router = APIRouter()
 security = HTTPBearer()
 
+
 @router.get("/geteventtypes")
 def get_event_types(credentials: HTTPAuthorizationCredentials = Depends(security)):
     payload = decode_jwt_token(credentials.credentials)
@@ -30,9 +31,11 @@ def get_event_types(credentials: HTTPAuthorizationCredentials = Depends(security
     if is_admin(source_id):
         cursor.execute("SELECT DISTINCT EventType FROM Events")
     else:
-        cursor.execute("SELECT DISTINCT EventType FROM Events WHERE SourceID = ?", (source_id,))
+        cursor.execute(
+            "SELECT DISTINCT EventType FROM Events WHERE SourceID = ?", (source_id,)
+        )
 
-    return { "eventTypes": [row[0] for row in cursor.fetchall()] }
+    return {"eventTypes": [row[0] for row in cursor.fetchall()]}
 
 
 @router.get("/geteventtrends/")
@@ -40,8 +43,8 @@ def get_event_summary(
     from_date: str,
     to_date: str,
     events: str = "",
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):  
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
     validate_date_range(from_date, to_date)
     payload = decode_jwt_token(credentials.credentials)
     if not payload:
@@ -60,7 +63,9 @@ def get_event_summary(
     event_types = [e.strip() for e in events.split(",") if e.strip()]
 
     if not event_types:
-        raise HTTPException(status_code=400, detail="At least one event type is required.")
+        raise HTTPException(
+            status_code=400, detail="At least one event type is required."
+        )
 
     placeholders = ", ".join("?" for _ in event_types)
     params = [from_date, to_date] + event_types
@@ -71,8 +76,9 @@ def get_event_summary(
         source_clause = "SourceID = ?"
         params = [source_id] + params
 
-    cursor.execute(f"""
-        SELECT 
+    cursor.execute(
+        f"""
+        SELECT
             CONVERT(date, EventTime) AS EventDate,
             EventType,
             COUNT(*) AS Count
@@ -82,7 +88,9 @@ def get_event_summary(
           AND EventType IN ({placeholders})
         GROUP BY CONVERT(date, EventTime), EventType
         ORDER BY EventDate, EventType
-    """, params)
+    """,
+        params,
+    )
 
     rows = cursor.fetchall()
     data = defaultdict(lambda: defaultdict(int))
@@ -97,17 +105,16 @@ def get_event_summary(
     datasets = []
 
     for event_type, date_counts in data.items():
-        datasets.append({
-            "label": event_type,
-            "data": [date_counts.get(date, 0) for date in sorted_dates],
-            "fill": False,
-            "borderWidth": 2
-        })
+        datasets.append(
+            {
+                "label": event_type,
+                "data": [date_counts.get(date, 0) for date in sorted_dates],
+                "fill": False,
+                "borderWidth": 2,
+            }
+        )
 
-    return {
-        "labels": sorted_dates,
-        "datasets": datasets
-    }
+    return {"labels": sorted_dates, "datasets": datasets}
 
 
 @router.get("/getbatchstatus")
@@ -130,7 +137,7 @@ def get_batch_counts(credentials: HTTPAuthorizationCredentials = Depends(securit
     yesterday = today - timedelta(days=1)
 
     base_query = """
-        SELECT 
+        SELECT
             CAST(EventTime AS DATE) as event_date,
             COUNT(DISTINCT BatchID)
         FROM Events
@@ -151,5 +158,5 @@ def get_batch_counts(credentials: HTTPAuthorizationCredentials = Depends(securit
     counts = {row[0].isoformat(): row[1] for row in rows}
     return {
         "today": counts.get(today.isoformat(), 0),
-        "yesterday": counts.get(yesterday.isoformat(), 0)
+        "yesterday": counts.get(yesterday.isoformat(), 0),
     }

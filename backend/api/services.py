@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from ..auth import decode_jwt_token, validate_date_range
 from ..db import get_connection
-from typing import List
 from collections import defaultdict
 
 router = APIRouter()
@@ -26,10 +25,7 @@ def get_services_status(credentials: HTTPAuthorizationCredentials = Depends(secu
     cursor.execute("SELECT COUNT(*) FROM Services WHERE IsRunning = 1")
     running = cursor.fetchone()[0]
 
-    return {
-        "total": total,
-        "running": running
-    }
+    return {"total": total, "running": running}
 
 
 @router.get("/getservices")
@@ -53,7 +49,7 @@ def get_service_metrics(
     to_date: str,
     services: str = "",
     metrics: str = "",
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     validate_date_range(from_date, to_date)
     try:
@@ -83,7 +79,7 @@ def get_service_metrics(
         where_clause = " AND ".join(filters)
 
         query = f"""
-            SELECT 
+            SELECT
                 CONVERT(DATE, am.WindowStart) AS Day,
                 s.ServiceName,
                 am.MetricType,
@@ -111,18 +107,18 @@ def get_service_metrics(
         datasets = []
 
         for label, values in grouped.items():
-            datasets.append({
-                "label": label,
-                "data": [values.get(date, 0) for date in sorted_dates],
-                "fill": False,
-                "borderWidth": 2
-            })
+            datasets.append(
+                {
+                    "label": label,
+                    "data": [values.get(date, 0) for date in sorted_dates],
+                    "fill": False,
+                    "borderWidth": 2,
+                }
+            )
 
-        return {
-            "labels": sorted_dates,
-            "datasets": datasets
-        }
+        return {"labels": sorted_dates, "datasets": datasets}
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")

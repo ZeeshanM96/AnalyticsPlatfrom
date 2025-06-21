@@ -34,19 +34,18 @@ def get_user_preferences(credentials: HTTPAuthorizationCredentials = Depends(sec
 
     source_id = row[0]
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT ViewName, PreferredView, Enabled
         FROM UserPreferences
         WHERE SourceID = ?
         ORDER BY ViewName
-    """, (source_id,))
+    """,
+        (source_id,),
+    )
 
     preferences = [
-        {
-            "viewName": row[0],
-            "preferredView": row[1],
-            "enabled": bool(row[2])
-        }
+        {"viewName": row[0], "preferredView": row[1], "enabled": bool(row[2])}
         for row in cursor.fetchall()
     ]
 
@@ -56,7 +55,7 @@ def get_user_preferences(credentials: HTTPAuthorizationCredentials = Depends(sec
 @router.post("/updatepreferences")
 def update_user_preferences(
     preferences: List[PreferenceUpdate] = Body(...),
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     payload = decode_jwt_token(credentials.credentials)
     if not payload:
@@ -74,11 +73,14 @@ def update_user_preferences(
     source_id = row[0]
 
     for pref in preferences:
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE UserPreferences
             SET PreferredView = ?, Enabled = ?
             WHERE SourceID = ? AND ViewName = ?
-        """, (pref.preferredView, int(pref.enabled), source_id, pref.viewName))
+        """,
+            (pref.preferredView, int(pref.enabled), source_id, pref.viewName),
+        )
 
     conn.commit()
     return {"success": True, "message": "Preferences updated successfully"}

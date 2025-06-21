@@ -16,7 +16,7 @@ def serve_frontend():
         print("login.html NOT FOUND, please check the path.")
         raise HTTPException(status_code=404, detail="login.html missing")
 
-    return FileResponse(index_path, media_type='text/html')
+    return FileResponse(index_path, media_type="text/html")
 
 
 @router.get("/dashboard")
