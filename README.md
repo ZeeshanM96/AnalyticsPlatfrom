@@ -93,6 +93,7 @@ pytest
 
 ### DB design:
 ![DBDesign](https://github.com/user-attachments/assets/675db00b-9468-42b6-af57-45e04794b26d)
+Your can regenerate a smilar schema using database.sql file
 
 ### Application Design:
 ![Screenshot 2025-06-14 020859](https://github.com/user-attachments/assets/d11b00c2-409d-47e4-b4c8-440ca9e8b40c)
