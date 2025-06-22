@@ -1,0 +1,36 @@
+# version: '3.9'
+
+services:
+  # sqlserver:
+  #   build:
+  #     context: ./sqlserver
+  #     dockerfile: Dockerfile
+  #   container_name: sqlserver
+  #   env_file: .env
+  #   ports:
+  #     - "14333:1433"
+  #   volumes:
+  #     - ./sqlserver/init.sql.template:/init.sql.template:ro
+  #     # - ./sqlserver/entrypoint.sh:/usr/src/app/entrypoint.sh:ro
+  #   # command: ["/bin/bash", "/usr/src/app/entrypoint.sh"]
+  #   networks:
+  #     - backend
+
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: analytical-dashboard
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    # depends_on:
+    #   - sqlserver
+
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
