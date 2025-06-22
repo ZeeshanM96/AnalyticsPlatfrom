@@ -2,32 +2,45 @@
 
 ## Description
 
-Digital Analytics Dashboard is a full-stack web application for real-time monitoring and analytics of business events, alerts, and service metrics. It features secure JWT authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights. The platform supports real-time data updates via WebSockets, customizable views, and user preferences for a tailored analytics experience.
+Digital Analytics Dashboard is a full-stack web application for real-time monitoring and analytics of business events, alerts, and service metrics. It features secure JWT authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights. The platform supports real-time data updates via WebSockets, customizable views, and user preferences for a tailored analytics experience. The backend is powered by FastAPI and connects to a SQL database, while the frontend is a responsive HTML/CSS/JS application.
 
 ---
 
 ## Features
 
-- **User Authentication:** Secure JWT-based login and signup with role-based access (Client/Developer).
-- **Interactive Dashboard:** Visualize batches, events, alerts, and service metrics with dynamic charts and filters.
-- **Real-Time Data:** Live updates for dashboard stats and alerts using WebSockets.
-- **Customizable Views:** Users can personalize dashboard cards and preferences.
-- **RESTful API:** FastAPI backend with robust validation and efficient SQL aggregation.
-- **Responsive Frontend:** Built with Bootstrap 5 and Chart.js for a modern, mobile-friendly UI.
+- **User Authentication** (JWT-based)
+- **Role-based Access Control** (Admin/User)
+- **Real-time Alerts & Notifications**
+- **Batch & Severity-based Alert Summaries**
+- **Interactive Charts & Visualizations** (Chart.js)
+- **User Preferences & Customization**
+- **RESTful API Endpoints**
+- **Responsive Frontend** (Bootstrap 5)
+- **Dockerized Deployment**
+- **CI/CD with GitHub Actions**
 
 ---
 
 ## Tools & Technologies
 
-- **Backend:** FastAPI, Pydantic, pyodbc, SQL Server, JWT (PyJWT)
-- **Frontend:** HTML5, CSS3, Bootstrap 5, JavaScript (ES6), Chart.js
+- **Database:** Microsoft SQL Server
+- **Backend:** FastAPI, SQLAlchemy, PyODBC, Pydantic, PyJWT
+- **Frontend:** HTML5, CSS3, JavaScript (ES6+), Bootstrap 5, Chart.js
 - **Real-Time:** WebSocket (FastAPI)
 - **Authentication:** JWT (JSON Web Tokens)
-- **Database:** Microsoft SQL Server
+- **Database:** SQL Server (or compatible, via ODBC)
+- **Testing:** Pytest, FastAPI TestClient
+- **Linting/Formatting:** Flake8, Black
+- **Containerization:** Docker, Docker Compose
+- **CI/CD:** GitHub Actions
 
 ---
 
 ## Getting Started
+### Prerequisites
+
+- [Docker](https://www.docker.com/get-started) & [Docker Compose](https://docs.docker.com/compose/)
+- (Optional for local dev) Python 3.10+ and pip
 
 ### Installation
 
@@ -37,35 +50,44 @@ Digital Analytics Dashboard is a full-stack web application for real-time monito
    cd AnalyticsPlatfrom
    ```
 
-2. **Create and activate a virtual environment:**
-  ```sh
-  python -m venv venv
-  # On Windows:
-  venv\Scripts\activate
-  # On macOS/Linux:
-  source venv/bin/activate
-  ```
+2. **Configure Environment**
 
-2. **Install backend dependencies:**
-  ```sh
-  pip install -r requirements.txt
-  ```
-3. **Configure your database connection:**
-  Edit backend/db.py with your DB details.
+Create and setup your `.env` file and update with your database connection and secret keys.
 
-### Running the Application
-Start the FastAPI backend:
-  ```sh
-  uvicorn backend.main:app --reload
-  ```
-Initiate the real time data script to injest data into your table:
    ```sh
-  python insert_data.py
-  ```
+   # Database config
+   DB_SERVER=host.docker.internal,1433
+   DB_DATABASE="YOUR DATABASE NAME"
+   DB_USER="YOUR USERNAME"
+   DB_PASSWORD="YOUR PASSWORD"
+   ACCEPT_EULA=Y
 
-### Access the application:
-- Open your browser and go to: http://localhost:8000
-- The dashboard is available after login. Start off by creating your own login.
+   # JWT config
+   JWT_SECRET=YOUR JWT SECRET
+   JWT_ALGORITHM=HS256
+   JWT_EXPIRATION_MINUTES=60
+   ```
+3. **Build and Run with Docker**
+
+```sh
+docker-compose up --build
+```
+
+- The backend will be available at [http://localhost:8000](http://localhost:8000)
+- The frontend is served via FastAPI static routes (e.g., `/html/login.html`, `/html/dashboard.html`)
+
+4. **Run Tests (Optional)**
+
+```sh
+docker-compose run --rm fastapi pytest
+```
+
+Or locally:
+
+```sh
+pip install -r requirements.txt
+pytest
+```
  
 ### System Design:
 
