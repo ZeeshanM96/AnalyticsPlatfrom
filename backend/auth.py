@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
 JWT_SECRET = os.getenv("JWT_SECRET")
