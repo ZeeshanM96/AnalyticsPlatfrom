@@ -25,4 +25,5 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 EXPOSE 8000
 
 # Start FastAPI app
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD bash -c "python backend/insert_data.py >> insert.log 2>&1 & uvicorn backend.main:app --host 0.0.0.0 --port 8000"
+
