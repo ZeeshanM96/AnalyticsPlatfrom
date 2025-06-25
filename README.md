@@ -2,7 +2,11 @@
 
 ## Description
 
-Digital Analytics Dashboard is a full-stack web application for real-time monitoring and analytics of business events, alerts, and service metrics. It features secure JWT authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights. The platform supports real-time data updates via WebSockets, customizable views, and user preferences for a tailored analytics experience. The backend is powered by FastAPI and connects to a SQL database, while the frontend is a responsive HTML/CSS/JS application.
+Digital Analytics Dashboard is a full-stack, containerized web application for real-time monitoring and analytics of business events, alerts, and service metrics. It features secure JWT authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights.
+
+The platform supports real-time data updates via WebSockets, powered by a Kafka message bus, enabling live streaming of metrics and alerts to the frontend. Data is ingested and processed through Kafka producers and consumers, with persistent storage in a SQL database. Users can customize their dashboard views and preferences for a tailored analytics experience.
+
+The backend is built with FastAPI and integrates with Kafka and SQL databases, while the frontend is a responsive HTML/CSS/JS application using Chart.js for visualizations. The entire stack is dockerized for easy deployment, and CI/CD pipelines are included for automated testing and code quality.
 
 ---
 
@@ -18,19 +22,21 @@ Digital Analytics Dashboard is a full-stack web application for real-time monito
 - **Responsive Frontend** (Bootstrap 5)
 - **Dockerized Deployment**
 - **CI/CD with GitHub Actions**
+- **Kafka-based Data Ingestion and Streaming**
+- **Real-time Data Updates via WebSockets**
 
 ---
 
 ## Tools & Technologies
 
 - **Database:** Microsoft SQL Server
-- **Backend:** FastAPI, SQLAlchemy, PyODBC, Pydantic, PyJWT
+- **Backend:** FastAPI, SQLAlchemy, PyODBC, Pydantic, PyJWT, Confluent-Kafka
 - **Frontend:** HTML5, CSS3, JavaScript (ES6+), Bootstrap 5, Chart.js
-- **Real-Time:** WebSocket (FastAPI)
+- **Real-Time:** Kafka, WebSocket (FastAPI)
 - **Authentication:** JWT (JSON Web Tokens)
 - **Database:** SQL Server (or compatible, via ODBC)
 - **Testing:** Pytest, FastAPI TestClient
-- **Linting/Formatting:** Flake8, Black
+- **Linting/Formatting:** Flake8, Black, Prettier, ESLint, Stylelint
 - **Containerization:** Docker, Docker Compose
 - **CI/CD:** GitHub Actions
 
@@ -56,7 +62,7 @@ Create and setup your `.env` file and update with your database connection and s
 
    ```sh
    # Database config
-   DB_SERVER=host.docker.internal,1433
+   DB_SERVER=YOUR-LOCALHOST-IP, YOUR TCP/IP
    DB_DATABASE="YOUR DATABASE NAME"
    DB_USER="YOUR USERNAME"
    DB_PASSWORD="YOUR PASSWORD"
@@ -93,10 +99,13 @@ pytest
 
 ### DB design:
 ![DBDesign](https://github.com/user-attachments/assets/675db00b-9468-42b6-af57-45e04794b26d)
+
 Your can regenerate a smilar schema using database.sql file
 
 ### Application Design:
-![Screenshot 2025-06-14 020859](https://github.com/user-attachments/assets/d11b00c2-409d-47e4-b4c8-440ca9e8b40c)
+![screencapture-127-0-0-1-8000-dashboard-2025-06-26-01_11_50_pages-to-jpg-0001](https://github.com/user-attachments/assets/15a9550b-bf6c-469d-bf53-fad9c24cf846)
+
+
 
 
 ### Additional Notes
