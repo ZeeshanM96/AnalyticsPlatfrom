@@ -1,7 +1,5 @@
 // static/js/realtime.js
-import {
-  getToken
-} from "/static/js/auth.js";
+import { getToken } from "/static/js/auth.js";
 
 import { showAlert } from "/static/js/utils.js";
 
@@ -20,10 +18,10 @@ export async function startRealTimeChart() {
   const datasetsMap = {};
 
   const sourceColors = {
-    1: 'rgba(54, 162, 235, 1)',   // Blue (Marketing)
-    2: 'rgba(255, 206, 86, 1)',   // Yellow (User Activity)
-    3: 'rgba(75, 192, 192, 1)',   // Teal (Platform Monitoring)
-    4: 'rgba(255, 99, 132, 1)',   // Red (Backend/Infra)
+    1: "rgba(54, 162, 235, 1)", // Blue (Marketing)
+    2: "rgba(255, 206, 86, 1)", // Yellow (User Activity)
+    3: "rgba(75, 192, 192, 1)", // Teal (Platform Monitoring)
+    4: "rgba(255, 99, 132, 1)", // Red (Backend/Infra)
   };
 
   const chart = new Chart(ctx, {
@@ -35,17 +33,17 @@ export async function startRealTimeChart() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: {
-        mode: 'nearest',
+        mode: "nearest",
         intersect: false,
       },
       plugins: {
         title: {
           display: true,
-          text: 'Live Metrics by Source',
+          text: "Live Metrics by Source",
         },
         legend: {
           display: true,
-          position: 'top',
+          position: "top",
           labels: {
             usePointStyle: true,
           },
@@ -53,24 +51,24 @@ export async function startRealTimeChart() {
       },
       scales: {
         x: {
-          type: 'time',
+          type: "time",
           time: {
-            unit: 'second',
-            tooltipFormat: 'HH:mm:ss',
+            unit: "second",
+            tooltipFormat: "HH:mm:ss",
             displayFormats: {
-              second: 'HH:mm:ss',
+              second: "HH:mm:ss",
             },
           },
           title: {
             display: true,
-            text: 'Timestamp',
+            text: "Timestamp",
           },
         },
         y: {
           beginAtZero: true,
           title: {
             display: true,
-            text: 'Value',
+            text: "Value",
           },
         },
       },
@@ -81,7 +79,7 @@ export async function startRealTimeChart() {
     const data = JSON.parse(event.data);
     const timestamp = new Date(data.timestamp);
     const key = `${data.metric_name}|${data.source_id}`;
-    const color = sourceColors[data.source_id] || 'rgba(100,100,100,1)';
+    const color = sourceColors[data.source_id] || "rgba(100,100,100,1)";
 
     if (!datasetsMap[key]) {
       const newDataset = {
@@ -111,4 +109,3 @@ export async function startRealTimeChart() {
     showAlert("Real-time connection closed.");
   };
 }
-

@@ -105,10 +105,9 @@ export async function getMetricTypes(headers) {
 
 export async function loadEventTypes(targetId = "eventTypesList") {
   try {
-
     if (!cachedEventTypes) {
       const res = await fetch("/geteventtypes", {
-        headers: { Authorization: `Bearer ${getToken()}` }
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
 
       if (!res.ok) {

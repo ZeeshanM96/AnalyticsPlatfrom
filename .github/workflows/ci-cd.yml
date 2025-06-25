@@ -34,10 +34,30 @@ jobs:
       run: |
         flake8 backend/
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install Node.js dependencies
+      run: npm ci
+
+    - name: Run Prettier (check only)
+      run: |
+        npm run format:check
+
+    - name: Run ESLint
+      run: |
+        npm run lint
+
+    - name: Run Stylelint
+      run: |
+        npm run stylelint
+
   test:
     name: Run Tests (pytest)
     runs-on: ubuntu-latest
-    needs: lint   # This ensures linting must succeed before tests run
+    needs: lint   
 
     steps:
     - name: Checkout code

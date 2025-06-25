@@ -1,8 +1,16 @@
 // /loadFilter.js
 import { getToken } from "/static/js/auth.js";
-import { renderCheckboxList, createCheckboxListItem } from "/static/js/dashboard.js";
+import {
+  renderCheckboxList,
+  createCheckboxListItem,
+} from "/static/js/dashboard.js";
 import { showAlert } from "/static/js/utils.js";
-import { getSeverities, getAlertTypes, getBatches, getSources, getMetricTypes, loadEventTypes } from "/static/js/filterCache.js";
+import {
+  getSeverities,
+  getBatches,
+  getSources,
+  getMetricTypes,
+} from "/static/js/filterCache.js";
 
 export async function loadAlertFilterOptions() {
   const batchList = document.getElementById("batchDropdownList");
@@ -17,9 +25,7 @@ export async function loadAlertFilterOptions() {
   const headers = { Authorization: `Bearer ${token}` };
 
   const severities = await getSeverities(headers);
-  const alertTypes = await getAlertTypes(headers);
   const batches = await getBatches(headers);
-
 
   batchList.innerHTML = "";
   batches.forEach((batchId, index) => {
@@ -65,27 +71,26 @@ export async function loadServiceAndMetricOptions() {
   const headers = { Authorization: `Bearer ${token}` };
 
   try {
-     const servicesRes = await fetch("/getservices", { headers });
-     const servicesData = await servicesRes.json();
-     const services = servicesData.services;
+    const servicesRes = await fetch("/getservices", { headers });
+    const servicesData = await servicesRes.json();
+    const services = servicesData.services;
 
-     const metrics = await getMetricTypes(headers);
+    const metrics = await getMetricTypes(headers);
 
-     const serviceList = document.getElementById("serviceDropdownList");
-     const metricList = document.getElementById("metricDropdownList");
+    const serviceList = document.getElementById("serviceDropdownList");
+    const metricList = document.getElementById("metricDropdownList");
 
-     serviceList.innerHTML = "";
-     services.forEach((service, i) => {
-       const item = createCheckboxListItem(`service_${i}`, service, service);
-       serviceList.appendChild(item);
-     });
+    serviceList.innerHTML = "";
+    services.forEach((service, i) => {
+      const item = createCheckboxListItem(`service_${i}`, service, service);
+      serviceList.appendChild(item);
+    });
 
     metricList.innerHTML = "";
     metrics.forEach((metric, i) => {
       const item = createCheckboxListItem(`metric_${i}`, metric, metric);
       metricList.appendChild(item);
     });
-
   } catch (err) {
     console.error("Failed to load services or metrics:", err);
     showAlert("Failed to load dropdown options.");
@@ -97,7 +102,7 @@ export async function loadMetricTypes() {
   const headers = { Authorization: `Bearer ${token}` };
 
   try {
-    const metrics = await getMetricTypes(headers); 
+    const metrics = await getMetricTypes(headers);
 
     const list = document.getElementById("sourceEventTypesList");
     list.innerHTML = "";
@@ -119,13 +124,12 @@ export async function loadMetricTypes() {
   }
 }
 
-
 export async function loadSourceTypes() {
   const token = getToken();
   const headers = { Authorization: `Bearer ${token}` };
 
   try {
-    const sources = await getSources(headers); 
+    const sources = await getSources(headers);
     renderCheckboxList("sourceDropdownList", sources, "sourceMetric");
   } catch (err) {
     console.error("Failed to load source metric dropdown:", err);
