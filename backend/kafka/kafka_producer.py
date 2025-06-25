@@ -1,6 +1,8 @@
 # kafka_producer.py
 from confluent_kafka import Producer
-import time, json, random
+import time
+import json
+import random
 from datetime import datetime
 
 producer = Producer({"bootstrap.servers": "kafka:9092"})

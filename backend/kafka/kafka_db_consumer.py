@@ -76,7 +76,7 @@ cursor = conn.cursor()
 cursor.execute(
     """
 IF NOT EXISTS (
-    SELECT * FROM sysobjects 
+    SELECT * FROM sysobjects
     WHERE name='RealTimeData' AND xtype='U'
 )
 CREATE TABLE RealTimeData (
