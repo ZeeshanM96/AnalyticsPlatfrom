@@ -1,0 +1,18 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.29.0",
+    "prettier": "^3.6.1",
+    "stylelint": "^16.21.0",
+    "stylelint-config-standard": "^38.0.0",
+    "stylelint-plugin-standard": "^1.1.11"
+  },
+  "scripts": {
+    "format": "prettier frontend/ --write",
+    "format:check": "prettier frontend/ --check",
+    "stylelint": "stylelint 'frontend/**/*.css'",
+    "stylelint:fix": "stylelint 'frontend/**/*.css' --fix",
+    "lint": "eslint frontend/ --ext .js",
+    "lint:fix": "eslint frontend/ --ext .js --fix"
+  }
+}

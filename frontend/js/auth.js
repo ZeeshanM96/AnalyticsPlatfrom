@@ -31,26 +31,25 @@ export function isAuthenticated() {
 
 export function scheduleAutoLogout(token) {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const expiryTime = payload.exp * 1000; // Convert to milliseconds
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const expiryTime = payload.exp * 1000;
     const timeout = expiryTime - Date.now();
 
     if (timeout > 0) {
       setTimeout(() => {
-  try {
-    alert("Session expired. Redirecting to login...");
-    localStorage.removeItem("token");
-  } finally {
-    window.location.href = "/";
-  }
-}, timeout);
-
+        try {
+          alert("Session expired. Redirecting to login...");
+          localStorage.removeItem("token");
+        } finally {
+          window.location.href = "/";
+        }
+      }, timeout);
     } else {
       // Token already expired
       localStorage.removeItem("token");
       window.location.href = "/";
     }
-  } catch (err) {
+  } catch {
     // Invalid token
     localStorage.removeItem("token");
     window.location.href = "/";
@@ -63,9 +62,15 @@ export function clearAuth() {
 
 // Initialize state, invoke it in dashboard.js
 export function logState() {
-  alert(JSON.stringify({
-    token: getToken(),
-    user: getUser(),
-    isAuthenticated: isAuthenticated()
-  }, null, 2));
+  alert(
+    JSON.stringify(
+      {
+        token: getToken(),
+        user: getUser(),
+        isAuthenticated: isAuthenticated(),
+      },
+      null,
+      2,
+    ),
+  );
 }

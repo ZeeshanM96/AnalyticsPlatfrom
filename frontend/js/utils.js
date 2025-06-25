@@ -2,7 +2,7 @@
 export function showAlert(message, type = "danger") {
   if (document.querySelector(".alert")) return;
 
-  const alertContainer = document.getElementById("alertContainer");
+  const alertContainer = document.getElementById("alert-container");
   alertContainer.innerHTML = `
     <div class="alert alert-${type} alert-dismissible fade show py-2 px-3 small" role="alert">
       ${message}
@@ -11,6 +11,8 @@ export function showAlert(message, type = "danger") {
 }
 
 export function getSelectedSourceEventTypes() {
-  const checkboxes = document.querySelectorAll("#sourceEventTypesList input[type='checkbox']:checked");
-  return Array.from(checkboxes).map(cb => cb.value);
+  const checkboxes = document.querySelectorAll(
+    "#sourceEventTypesList input[type='checkbox']:checked",
+  );
+  return Array.from(checkboxes).map((cb) => cb.value);
 }

@@ -1,21 +1,6 @@
 # version: '3.9'
 
 services:
-  # sqlserver:
-  #   build:
-  #     context: ./sqlserver
-  #     dockerfile: Dockerfile
-  #   container_name: sqlserver
-  #   env_file: .env
-  #   ports:
-  #     - "14333:1433"
-  #   volumes:
-  #     - ./sqlserver/init.sql.template:/init.sql.template:ro
-  #     # - ./sqlserver/entrypoint.sh:/usr/src/app/entrypoint.sh:ro
-  #   # command: ["/bin/bash", "/usr/src/app/entrypoint.sh"]
-  #   networks:
-  #     - backend
-
   fastapi:
     build:
       context: .
@@ -25,11 +10,61 @@ services:
       - .env
     ports:
       - "8000:8000"
-    # depends_on:
-    #   - sqlserver
 
     networks:
       - backend
+  
+  kafka-db-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python -m backend.kafka.kafka_db_consumer
+    env_file:
+    - .env
+    networks:
+      - backend
+    depends_on:
+      - kafka
+
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - backend
+
+  kafka:
+    image: bitnami/kafka:3.5
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    networks:
+      - backend
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+  
+  kafka-producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "backend/kafka/kafka_producer.py"]
+    networks:
+      - backend
+    depends_on:
+      kafka:
+        condition: service_healthy
 
 networks:
   backend:
