@@ -1,11 +1,10 @@
 // /js/preferences.js
-import { getToken,
-   } from "/static/js/auth.js";
+import { getToken } from "/static/js/auth.js";
 
 export async function fetchUserPreferences() {
-  const token = getToken(); 
-  const res = await fetch('/getuserpreferences', {
-    headers: { Authorization: `Bearer ${token}` }
+  const token = getToken();
+  const res = await fetch("/getuserpreferences", {
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!res.ok) {
@@ -13,7 +12,7 @@ export async function fetchUserPreferences() {
     return {};
   }
 
-  return await res.json(); 
+  return await res.json();
 }
 
 export async function fetchUserPreferencesAndRender() {
@@ -25,14 +24,18 @@ export async function fetchUserPreferencesAndRender() {
     return;
   }
 
-  const rows = data.preferences.map((pref, idx) => `
+  const rows = data.preferences
+    .map(
+      (pref, idx) => `
     <tr>
       <td>${pref.viewName}</td>
       <td class="text-center">
         <input type="checkbox" id="prefEnabled-${idx}" ${pref.enabled ? "checked" : ""}>
       </td>
     </tr>
-  `).join("");
+  `,
+    )
+    .join("");
 
   container.innerHTML = `
     <table class="table table-bordered table-sm">
@@ -81,34 +84,46 @@ export async function applyPreferences() {
 
   // ----- Individual charts -----
   const eventChartSection = document.getElementById("EventTrends");
-  const serviceMetricChartSection = document.getElementById("serviceMetricsCard");
+  const serviceMetricChartSection =
+    document.getElementById("serviceMetricsCard");
   const sourceMetricChartSection = document.getElementById("sourceMetricsCard");
   const alertsByBatchSection = document.getElementById("AlertsByBatch");
   const issueResolutionSection = document.getElementById("IssueResolution");
   const RealTimeCard = document.getElementById("RealTimeCard");
 
   if (eventChartSection) {
-    eventChartSection.style.display = preferences["Event Trends"] ? "block" : "none";
+    eventChartSection.style.display = preferences["Event Trends"]
+      ? "block"
+      : "none";
   }
   if (alertsByBatchSection) {
-    alertsByBatchSection.style.display = preferences["Alerts by Batch"] ? "block" : "none";
+    alertsByBatchSection.style.display = preferences["Alerts by Batch"]
+      ? "block"
+      : "none";
   }
   if (issueResolutionSection) {
-    issueResolutionSection.style.display = preferences["Issue Resolution"] ? "block" : "none";
+    issueResolutionSection.style.display = preferences["Issue Resolution"]
+      ? "block"
+      : "none";
   }
   if (serviceMetricChartSection) {
-    serviceMetricChartSection.style.display = preferences["Service Metrics"] ? "block" : "none";
+    serviceMetricChartSection.style.display = preferences["Service Metrics"]
+      ? "block"
+      : "none";
   }
-    if (sourceMetricChartSection) {
-    sourceMetricChartSection.style.display = preferences["Source Metrics"] ? "block" : "none";
+  if (sourceMetricChartSection) {
+    sourceMetricChartSection.style.display = preferences["Source Metrics"]
+      ? "block"
+      : "none";
   }
   console.log("Real Time View enabled?", preferences["Real Time View"]);
   console.log("RealTimeCard element found?", !!RealTimeCard);
   if (RealTimeCard) {
-    RealTimeCard.style.display = preferences["Real Time View"] ? "flex" : "none";
-    
+    RealTimeCard.style.display = preferences["Real Time View"]
+      ? "flex"
+      : "none";
   }
-    applyPreferencesLayout(); 
+  applyPreferencesLayout();
 }
 
 export function applyPreferencesLayout() {
@@ -117,7 +132,7 @@ export function applyPreferencesLayout() {
   const sourceChart = document.getElementById("sourceMetricsCard");
 
   // Reset layout and spacing
-  [eventChart, serviceChart, sourceChart].forEach(card => {
+  [eventChart, serviceChart, sourceChart].forEach((card) => {
     if (card) {
       card.classList.remove("col-md-6", "col-md-12", "mt-5");
       card.classList.add("col-md-12");
@@ -126,7 +141,7 @@ export function applyPreferencesLayout() {
 
   // Get visible cards only
   const visibleCards = [eventChart, serviceChart, sourceChart].filter(
-    card => card && card.style.display !== "none"
+    (card) => card && card.style.display !== "none",
   );
 
   if (visibleCards.length === 3) {
@@ -138,7 +153,7 @@ export function applyPreferencesLayout() {
     visibleCards[2].classList.replace("col-md-12", "col-md-12");
     visibleCards[2].classList.add("mt-5");
   } else if (visibleCards.length === 2) {
-    visibleCards.forEach(card => {
+    visibleCards.forEach((card) => {
       card.classList.replace("col-md-12", "col-md-6");
       card.classList.remove("mt-5");
     });

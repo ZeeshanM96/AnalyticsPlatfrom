@@ -1,10 +1,13 @@
 // /js/chartDataLoaders.js
-import {
-  getToken
-} from "/static/js/auth.js";
+import { getToken } from "/static/js/auth.js";
 
-import { renderAlertBarChart,renderSourceMetricChart,renderServiceMetricsChart,
-   renderChart, renderResolutionChart } from "/static/js/rendercharts.js";
+import {
+  renderAlertBarChart,
+  renderSourceMetricChart,
+  renderServiceMetricsChart,
+  renderChart,
+  renderResolutionChart,
+} from "/static/js/rendercharts.js";
 
 import { showAlert, getSelectedSourceEventTypes } from "/static/js/utils.js";
 
@@ -20,9 +23,9 @@ export async function fetchEventSummary() {
   }
 
   if (!eventTypes.length) {
-  showAlert("Please select at least one event type.");
-  return;
-}
+    showAlert("Please select at least one event type.");
+    return;
+  }
 
   const url = new URL("/geteventtrends/", window.location.origin);
   url.searchParams.append("from_date", fromDate);
@@ -32,29 +35,28 @@ export async function fetchEventSummary() {
   }
 
   try {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  let data;
-  try {
-    data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      showAlert("Invalid server response.");
+      return;
+    }
+
+    if (!res.ok) {
+      const msg = data?.detail || "Failed to load event data.";
+      showAlert(msg);
+      return;
+    }
+
+    renderChart(data.labels, data.datasets);
   } catch {
-    showAlert("Invalid server response.");
-    return;
+    showAlert("An error occurred while fetching data.");
   }
-
-  if (!res.ok) {
-    const msg = data?.detail || "Failed to load event data.";
-    showAlert(msg);
-    return;
-  }
-
-  renderChart(data.labels, data.datasets);
-} catch (err) {
-  showAlert("An error occurred while fetching data.");
-}
-
 }
 
 export async function fetchAlertChartData() {
@@ -77,30 +79,29 @@ export async function fetchAlertChartData() {
   url.searchParams.append("severities", severities.join(","));
 
   try {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  let data;
-  try {
-    data = await res.json();
-  } catch {
-    showAlert("Invalid server response.");
-    return;
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      showAlert("Invalid server response.");
+      return;
+    }
+
+    if (!res.ok) {
+      const msg = data?.detail || "Failed to load alert chart data.";
+      showAlert(msg);
+      return;
+    }
+
+    renderAlertBarChart(data.labels, data.datasets);
+  } catch (err) {
+    console.error("Failed to load alert chart:", err);
+    showAlert("Error loading alert chart data.");
   }
-
-  if (!res.ok) {
-    const msg = data?.detail || "Failed to load alert chart data.";
-    showAlert(msg);
-    return;
-  }
-
-  renderAlertBarChart(data.labels, data.datasets);
-} catch (err) {
-  console.error("Failed to load alert chart:", err);
-  showAlert("Error loading alert chart data.");
-}
-
 }
 
 export async function fetchResolutionChartData() {
@@ -111,7 +112,7 @@ export async function fetchResolutionChartData() {
   const sources = getCheckedValues("issueSourceDropdownList");
   const severities = getCheckedValues("resSeverityDropdownList");
 
-  if (!fromDate || !toDate || sources.length === 0 ||  severities.length === 0) {
+  if (!fromDate || !toDate || sources.length === 0 || severities.length === 0) {
     showAlert("Please select all filters.");
     return;
   }
@@ -123,30 +124,29 @@ export async function fetchResolutionChartData() {
   url.searchParams.append("severities", severities.join(","));
 
   try {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  let data;
-  try {
-    data = await res.json();
-  } catch {
-    showAlert("Invalid server response.");
-    return;
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      showAlert("Invalid server response.");
+      return;
+    }
+
+    if (!res.ok) {
+      const msg = data?.detail || "Failed to load issue resolution data.";
+      showAlert(msg);
+      return;
+    }
+
+    renderResolutionChart(data.labels, data.datasets);
+  } catch (err) {
+    console.error("Error fetching resolution chart:", err);
+    showAlert("Error loading issue resolution data.");
   }
-
-  if (!res.ok) {
-    const msg = data?.detail || "Failed to load issue resolution data.";
-    showAlert(msg);
-    return;
-  }
-
-  renderResolutionChart(data.labels, data.datasets);
-} catch (err) {
-  console.error("Error fetching resolution chart:", err);
-  showAlert("Error loading issue resolution data.");
-}
-
 }
 
 export async function fetchServiceMetricsData() {
@@ -168,53 +168,52 @@ export async function fetchServiceMetricsData() {
   url.searchParams.append("metrics", metrics.join(","));
 
   try {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  let data;
-  try {
-    data = await res.json();
-  } catch {
-    showAlert("Invalid server response.");
-    return;
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      showAlert("Invalid server response.");
+      return;
+    }
+
+    if (!res.ok) {
+      const msg = data?.detail || "Failed to fetch service metrics.";
+      showAlert(msg);
+      return;
+    }
+
+    renderServiceMetricsChart(data.labels, data.datasets);
+  } catch (err) {
+    console.error("Error fetching service metrics:", err);
+    showAlert("Error loading service metrics data.");
   }
-
-  if (!res.ok) {
-    const msg = data?.detail || "Failed to fetch service metrics.";
-    showAlert(msg);
-    return;
-  }
-
-  renderServiceMetricsChart(data.labels, data.datasets);
-} catch (err) {
-  console.error("Error fetching service metrics:", err);
-  showAlert("Error loading service metrics data.");
-}
-
 }
 
 export async function fetchSourceMetricChartData() {
   const token = getToken();
   const fromDate = document.getElementById("sourceFromDate").value;
   const toDate = document.getElementById("sourceToDate").value;
-  const sources = getCheckedValues("sourceDropdownList"); 
+  const sources = getCheckedValues("sourceDropdownList");
   const eventTypes = getSelectedSourceEventTypes();
 
   if (!fromDate || !toDate || sources.length === 0 || eventTypes.length === 0) {
-  showAlert("Please select date range, sources, and event types.");
-  return;
-}
+    showAlert("Please select date range, sources, and event types.");
+    return;
+  }
 
   const url = new URL("/getsourcemetrics/", window.location.origin);
   url.searchParams.append("from_date", fromDate);
   url.searchParams.append("to_date", toDate);
-  sources.forEach(source => url.searchParams.append("sources", source));
-  eventTypes.forEach(type => url.searchParams.append("event_type", type));
+  sources.forEach((source) => url.searchParams.append("sources", source));
+  eventTypes.forEach((type) => url.searchParams.append("event_type", type));
 
   try {
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     const data = await res.json();
@@ -241,7 +240,8 @@ export async function loadDashboardStats() {
     const batchesRes = await fetch("/getbatchstatus", { headers });
     const batches = await batchesRes.json();
     document.getElementById("batchTodayCount").textContent = batches.today;
-    document.getElementById("batchYesterdayCount").textContent = batches.yesterday;
+    document.getElementById("batchYesterdayCount").textContent =
+      batches.yesterday;
 
     // 2. Services
     const servicesRes = await fetch("/getservicestatus", { headers });
@@ -254,7 +254,6 @@ export async function loadDashboardStats() {
     const alerts = await alertsRes.json();
     document.getElementById("alertsToday").textContent = alerts.today;
     document.getElementById("alertsYesterday").textContent = alerts.yesterday;
-
   } catch (err) {
     console.error("Failed to load dashboard stats:", err);
     showAlert("Error loading dashboard summary.");
@@ -262,11 +261,15 @@ export async function loadDashboardStats() {
 }
 
 export function getCheckedValues(listId) {
-  const checked = document.querySelectorAll(`#${listId} input[type="checkbox"]:checked`);
-  return Array.from(checked).map(cb => cb.value);
+  const checked = document.querySelectorAll(
+    `#${listId} input[type="checkbox"]:checked`,
+  );
+  return Array.from(checked).map((cb) => cb.value);
 }
 
 export function getSelectedEventTypes() {
-  const checkboxes = document.querySelectorAll("#eventTypesList input[type='checkbox']:checked");
-  return Array.from(checkboxes).map(cb => cb.value);
+  const checkboxes = document.querySelectorAll(
+    "#eventTypesList input[type='checkbox']:checked",
+  );
+  return Array.from(checkboxes).map((cb) => cb.value);
 }

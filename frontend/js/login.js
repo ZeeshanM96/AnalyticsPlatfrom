@@ -1,33 +1,31 @@
 import { setToken } from "/static/js/auth.js";
-const BASE_URL = ""; 
 
 
 // Populate sources
 document.addEventListener("DOMContentLoaded", () => {
   fetch(`/getsources`)
-    .then(res => {
+    .then((res) => {
       if (!res.ok) throw new Error("Failed to fetch sources");
       return res.json();
     })
-    .then(data => {
+    .then((data) => {
       const sourceSelect = document.getElementById("signupSource");
       sourceSelect.innerHTML = '<option value="">Select Source</option>';
-      data.sources.forEach(source => {
+      data.sources.forEach((source) => {
         const option = document.createElement("option");
         option.value = source;
         option.textContent = source;
         sourceSelect.appendChild(option);
       });
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
       showAlert("Failed to load sources.", "danger");
     });
 });
 
-
 function showAlert(message, type = "danger") {
-  const alertContainer = document.getElementById("alertContainer");
+  const alertContainer = document.getElementById("alert-container");
   alertContainer.innerHTML = `
     <div class="alert alert-${type} alert-dismissible fade show" role="alert">
       ${message}
@@ -49,7 +47,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     const res = await fetch(`/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
@@ -63,8 +61,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     showAlert("Login successful!", "success");
     document.getElementById("loginForm").reset();
     window.location.href = "/dashboard";
-
-  } catch (err) {
+  } catch {
     showAlert("Network error during login.");
   }
 });
@@ -84,22 +81,20 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
   }
 
   if (!role || !source) {
-  showAlert("Please select both a role and a source.");
-  return;
-}
+    showAlert("Please select both a role and a source.");
+    return;
+  }
 
-    
-    if (role === "Client" && (source === "AWS")) {    
+  if (role === "Client" && source === "AWS") {
     showAlert("Clients cannot choose 'AWS' as a source.");
     return;
-    }
-
+  }
 
   try {
     const res = await fetch(`/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role, source, password, confirm_password })
+      body: JSON.stringify({ email, role, source, password, confirm_password }),
     });
 
     const data = await res.json();
@@ -112,7 +107,7 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
     showAlert("Signup successful! You can now log in.", "success");
     document.getElementById("signupForm").reset();
     document.getElementById("loginTab").click();
-  } catch (err) {
+  } catch {
     showAlert("Network error during signup.");
   }
 });

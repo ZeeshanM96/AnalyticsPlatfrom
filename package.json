@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "stylelint": "^16.21.0",
+    "stylelint-config-standard": "^38.0.0",
+    "stylelint-plugin-standard": "^1.1.11"
+  }
+}
