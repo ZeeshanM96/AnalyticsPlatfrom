@@ -1,6 +1,5 @@
 import { setToken } from "/static/js/auth.js";
 
-
 // Populate sources
 document.addEventListener("DOMContentLoaded", () => {
   fetch(`/getsources`)

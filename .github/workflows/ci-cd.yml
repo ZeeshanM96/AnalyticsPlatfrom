@@ -41,15 +41,15 @@ jobs:
 
     - name: Run Prettier (check only)
       run: |
-        npx prettier frontend/ --check
+        npm run format:check
 
     - name: Run ESLint
       run: |
-        npx eslint frontend/ --ext .js
+        npm run lint
 
     - name: Run Stylelint
       run: |
-        npx stylelint "frontend/**/*.css"
+        npm run stylelint
 
   test:
     name: Run Tests (pytest)
