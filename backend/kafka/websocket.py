@@ -17,14 +17,17 @@ security = HTTPBearer()
 # Store connected WebSocket clients
 connected_clients = []
 
-kafka_consumer = Consumer({
-    'bootstrap.servers': 'kafka:9092',
-    'group.id': 'websocket-group',
-    'auto.offset.reset': 'latest'
-})
-kafka_consumer.subscribe(['websocket-topic'])
+kafka_consumer = Consumer(
+    {
+        "bootstrap.servers": "kafka:9092",
+        "group.id": "websocket-group",
+        "auto.offset.reset": "latest",
+    }
+)
+kafka_consumer.subscribe(["websocket-topic"])
 
 event_loop = asyncio.get_event_loop()
+
 
 @router.websocket("/ws/data")
 async def websocket_endpoint(websocket: WebSocket):
@@ -65,6 +68,7 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         connected_clients.remove(client)
 
+
 def kafka_listener():
     while True:
         msg = kafka_consumer.poll(1.0)
@@ -75,7 +79,9 @@ def kafka_listener():
             # Broadcast to all relevant WebSocket clients
             for client in connected_clients:
                 if client["source_id"] == data["source_id"]:
-                    asyncio.run_coroutine_threadsafe(client["socket"].send_json(data), event_loop)
+                    asyncio.run_coroutine_threadsafe(
+                        client["socket"].send_json(data), event_loop
+                    )
         except Exception as e:
             print(f"Kafka/WebSocket broadcast error: {e}")
 

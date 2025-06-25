@@ -6,6 +6,7 @@ from backend.db import get_connection
 from confluent_kafka.admin import AdminClient, NewTopic
 from datetime import datetime
 
+
 # Retry DB connection
 def get_connection_with_retry(retries=5, delay=5):
     for attempt in range(retries):
@@ -16,6 +17,7 @@ def get_connection_with_retry(retries=5, delay=5):
             print(f"DB not ready yet: {e}")
             time.sleep(delay)
     raise Exception("Could not connect to DB after retries.")
+
 
 # Retry Kafka consumer setup
 def create_kafka_consumer_with_retry(config, topic, retries=5, delay=5):
@@ -31,18 +33,21 @@ def create_kafka_consumer_with_retry(config, topic, retries=5, delay=5):
             time.sleep(delay)
     raise Exception("Could not connect to Kafka after retries.")
 
+
 def ensure_topic_exists(admin_client, topic_name):
     topics = admin_client.list_topics(timeout=5).topics
     if topic_name not in topics:
         print(f"Creating Kafka topic: {topic_name}")
-        admin_client.create_topics([NewTopic(topic_name, num_partitions=1, replication_factor=1)])
+        admin_client.create_topics(
+            [NewTopic(topic_name, num_partitions=1, replication_factor=1)]
+        )
         time.sleep(1)
 
 
-def wait_for_kafka_ready(bootstrap_servers='kafka:9092', retries=10, delay=5):
+def wait_for_kafka_ready(bootstrap_servers="kafka:9092", retries=10, delay=5):
     time.sleep(10)
-    admin_client = AdminClient({'bootstrap.servers': bootstrap_servers})
-    ensure_topic_exists(admin_client, 'db-topic')
+    admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
+    ensure_topic_exists(admin_client, "db-topic")
     for attempt in range(retries):
         try:
             cluster_metadata = admin_client.list_topics(timeout=5)
@@ -54,20 +59,22 @@ def wait_for_kafka_ready(bootstrap_servers='kafka:9092', retries=10, delay=5):
         time.sleep(delay)
     raise RuntimeError("Kafka is not ready after several retries.")
 
+
 # Kafka config
 kafka_config = {
-    'bootstrap.servers': 'kafka:9092',
-    'group.id': 'db-writer-group',
-    'auto.offset.reset': 'earliest'
+    "bootstrap.servers": "kafka:9092",
+    "group.id": "db-writer-group",
+    "auto.offset.reset": "earliest",
 }
 
 wait_for_kafka_ready()
-consumer = create_kafka_consumer_with_retry(kafka_config, 'db-topic')
+consumer = create_kafka_consumer_with_retry(kafka_config, "db-topic")
 conn = get_connection_with_retry()
 cursor = conn.cursor()
 
 # Ensure table exists
-cursor.execute("""
+cursor.execute(
+    """
 IF NOT EXISTS (
     SELECT * FROM sysobjects 
     WHERE name='RealTimeData' AND xtype='U'
@@ -79,7 +86,8 @@ CREATE TABLE RealTimeData (
     value FLOAT,
     timestamp DATETIME
 )
-""")
+"""
+)
 conn.commit()
 
 print("Kafka DB Consumer is running and listening...")
@@ -96,12 +104,20 @@ try:
 
         try:
             data = json.loads(msg.value().decode("utf-8"))
-            data['timestamp'] = datetime.strptime(data['timestamp'], "%Y-%m-%d %H:%M:%S.%f").strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            data["timestamp"] = datetime.strptime(
+                data["timestamp"], "%Y-%m-%d %H:%M:%S.%f"
+            ).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             print(f"Inserting into DB: {data}")
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO RealTimeData (source_id, metric_name, value, timestamp)
                 VALUES (?, ?, ?, ?)
-            """, data['source_id'], data['metric_name'], data['value'], data['timestamp'])
+            """,
+                data["source_id"],
+                data["metric_name"],
+                data["value"],
+                data["timestamp"],
+            )
             conn.commit()
         except Exception as e:
             print(f"DB Insert Error: {e}")
