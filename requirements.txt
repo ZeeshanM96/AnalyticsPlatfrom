@@ -9,6 +9,8 @@ pyjwt
 black
 flake8
 pytest
+websockets
+confluent-kafka
 
 # ---- FRONTEND / SHARED ----
 httpx
