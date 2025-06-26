@@ -73,6 +73,8 @@ Create and setup your `.env` file and update with your database connection and s
    JWT_ALGORITHM=HS256
    JWT_EXPIRATION_MINUTES=60
    ```
+   Your can regenerate a smilar schema by running `database.sql` file
+   
 3. **Build and Run with Docker**
 
 ```sh
