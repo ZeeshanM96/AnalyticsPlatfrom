@@ -73,6 +73,13 @@ Create and setup your `.env` file and update with your database connection and s
    JWT_ALGORITHM=HS256
    JWT_EXPIRATION_MINUTES=60
 
+   # Kafka config
+   KAFKA_BROKER=YOUR_BROKER:YOUR_PORT
+   DB_TOPIC=YOUR_DBTOPIC
+   WS_TOPIC=YOUR_WSTOPIC
+   CONSUMER_GROUP_DB=YOUR_DB_WRITE_GROUP
+   CONSUMER_GROUP_WS=YOUR_WS_GROUP
+
    # Google OAuth config
    GOOGLE_CLIENT_ID = YOUR_GOOGLE_CLIENT_ID
    GOOGLE_CLIENT_SECRET = YOUR_GOOGLE_CLIENT_SECRET
@@ -81,10 +88,14 @@ Create and setup your `.env` file and update with your database connection and s
    Your can regenerate a smilar schema by running `database.sql` file
    
 3. **Build and Run with Docker**
-
-```sh
-docker-compose up --build
-```
+   Just for good practice pull down all the containers:
+   ```sh
+   docker compose down --volumes --remove-orphans
+   ```
+   then build it again,
+   ```sh
+   docker-compose up --build
+   ```
 
 - The backend will be available at [http://localhost:8000](http://localhost:8000)
 - The frontend is served via FastAPI static routes (e.g., `/html/login.html`, `/html/dashboard.html`)
