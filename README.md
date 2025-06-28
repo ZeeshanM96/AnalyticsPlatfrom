@@ -2,7 +2,7 @@
 
 ## Description
 
-Digital Analytics Dashboard is a full-stack, containerized web application for real-time monitoring and analytics of business events, alerts, and service metrics. It features secure JWT authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights.
+Digital Analytics Dashboard is a full-stack, containerized web application for real-time monitoring and analytics of business events, alerts, and service metrics. It features secure OAuth based authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights.
 
 The platform supports real-time data updates via WebSockets, powered by a Kafka message bus, enabling live streaming of metrics and alerts to the frontend. Data is ingested and processed through Kafka producers and consumers, with persistent storage in a SQL database. Users can customize their dashboard views and preferences for a tailored analytics experience.
 
@@ -12,7 +12,7 @@ The backend is built with FastAPI and integrates with Kafka and SQL databases, w
 
 ## Features
 
-- **User Authentication** (JWT-based)
+- **User Authentication** (OAuth)
 - **Role-based Access Control** (Admin/User)
 - **Real-time Alerts & Notifications**
 - **Batch & Severity-based Alert Summaries**
@@ -33,7 +33,7 @@ The backend is built with FastAPI and integrates with Kafka and SQL databases, w
 - **Backend:** FastAPI, SQLAlchemy, PyODBC, Pydantic, PyJWT, Confluent-Kafka
 - **Frontend:** HTML5, CSS3, JavaScript (ES6+), Bootstrap 5, Chart.js
 - **Real-Time:** Kafka, WebSocket (FastAPI)
-- **Authentication:** JWT (JSON Web Tokens)
+- **Authentication:** OAuth 
 - **Database:** SQL Server (or compatible, via ODBC)
 - **Testing:** Pytest, FastAPI TestClient
 - **Linting/Formatting:** Flake8, Black, Prettier, ESLint, Stylelint
@@ -72,6 +72,11 @@ Create and setup your `.env` file and update with your database connection and s
    JWT_SECRET=YOUR JWT SECRET
    JWT_ALGORITHM=HS256
    JWT_EXPIRATION_MINUTES=60
+
+   # Google OAuth config
+   GOOGLE_CLIENT_ID = YOUR_GOOGLE_CLIENT_ID
+   GOOGLE_CLIENT_SECRET = YOUR_GOOGLE_CLIENT_SECRET
+   SESSION_SECRET= YOUR_SESSION_SECRET
    ```
    Your can regenerate a smilar schema by running `database.sql` file
    
