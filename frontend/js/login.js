@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function showAlert(message, type = "danger") {
-  const alertContainer = document.getElementById("alert-container");
+  const alertContainer = document.getElementById("alertContainer");
   alertContainer.innerHTML = `
     <div class="alert alert-${type} alert-dismissible fade show" role="alert">
       ${message}
@@ -110,3 +110,6 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
     showAlert("Network error during signup.");
   }
 });
+
+
+

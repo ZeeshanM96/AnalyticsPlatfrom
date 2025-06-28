@@ -2,6 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.kafka import websocket
+from backend.api.google_oauth import router as google_auth_router
+from starlette.middleware.sessions import SessionMiddleware
+import os
+
+SESSION_SECRET = os.environ.get("SESSION_SECRET")
+
 
 from backend.api import (
     auth,
@@ -25,6 +31,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("SESSION_SECRET", "super-secret-key"),
+)
 
 # Static files
 app.mount("/static/js", StaticFiles(directory="frontend/js"), name="js")
@@ -43,3 +53,4 @@ app.include_router(services.router)
 app.include_router(preferences.router)
 app.include_router(metrics.router)
 app.include_router(websocket.router)
+app.include_router(google_auth_router)
