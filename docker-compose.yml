@@ -60,6 +60,8 @@ services:
       context: .
       dockerfile: Dockerfile
     command: ["python", "backend/kafka/kafka_producer.py"]
+    env_file:
+      - .env
     networks:
       - backend
     depends_on:

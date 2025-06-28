@@ -5,6 +5,19 @@ import time
 from backend.db import get_connection
 from confluent_kafka.admin import AdminClient, NewTopic
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+# Load Kafka configuration from environment variables
+KAFKA_BROKER = os.getenv("KAFKA_BROKER")
+DB_TOPIC = os.getenv("DB_TOPIC")
+CONSUMER_GROUP_DB=os.getenv("CONSUMER_GROUP_DB")
+# Ensure environment variables are set
+required_vars = [KAFKA_BROKER, DB_TOPIC, CONSUMER_GROUP_DB]
+if any(v is None for v in required_vars):
+    raise ValueError("KAFKA_BROKER, DB_TOPIC, CONSUMER_GROUP_DB must be set in .env")
+
 
 
 # Retry DB connection
@@ -39,15 +52,15 @@ def ensure_topic_exists(admin_client, topic_name):
     if topic_name not in topics:
         print(f"Creating Kafka topic: {topic_name}")
         admin_client.create_topics(
-            [NewTopic(topic_name, num_partitions=1, replication_factor=1)]
+            [NewTopic(topic_name, num_partitions=4, replication_factor=1)]
         )
         time.sleep(1)
 
 
-def wait_for_kafka_ready(bootstrap_servers="kafka:9092", retries=10, delay=5):
+def wait_for_kafka_ready(bootstrap_servers=KAFKA_BROKER, retries=10, delay=5):
     time.sleep(10)
     admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
-    ensure_topic_exists(admin_client, "db-topic")
+    ensure_topic_exists(admin_client, DB_TOPIC)
     for attempt in range(retries):
         try:
             cluster_metadata = admin_client.list_topics(timeout=5)
@@ -62,13 +75,13 @@ def wait_for_kafka_ready(bootstrap_servers="kafka:9092", retries=10, delay=5):
 
 # Kafka config
 kafka_config = {
-    "bootstrap.servers": "kafka:9092",
-    "group.id": "db-writer-group",
+    "bootstrap.servers": KAFKA_BROKER,
+    "group.id": CONSUMER_GROUP_DB,
     "auto.offset.reset": "earliest",
 }
 
 wait_for_kafka_ready()
-consumer = create_kafka_consumer_with_retry(kafka_config, "db-topic")
+consumer = create_kafka_consumer_with_retry(kafka_config, DB_TOPIC)
 conn = get_connection_with_retry()
 cursor = conn.cursor()
 
@@ -107,6 +120,7 @@ try:
             data["timestamp"] = datetime.strptime(
                 data["timestamp"], "%Y-%m-%d %H:%M:%S.%f"
             ).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            print(f"✅ Received from partition {msg.partition()}: {data}")
             print(f"Inserting into DB: {data}")
             cursor.execute(
                 """
