@@ -10,8 +10,8 @@
   "scripts": {
     "format": "prettier frontend/ --write",
     "format:check": "prettier frontend/ --check",
-    "stylelint": "stylelint 'frontend/**/*.css'",
-    "stylelint:fix": "stylelint 'frontend/**/*.css' --fix",
+    "stylelint": "stylelint frontend/**/*.css",
+    "stylelint:fix": "stylelint frontend/**/*.css --fix",
     "lint": "eslint frontend/ --ext .js",
     "lint:fix": "eslint frontend/ --ext .js --fix"
   }

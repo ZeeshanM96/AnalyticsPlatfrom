@@ -2,7 +2,7 @@
 export function showAlert(message, type = "danger") {
   if (document.querySelector(".alert")) return;
 
-  const alertContainer = document.getElementById("alert-container");
+  const alertContainer = document.getElementById("alertContainer");
   alertContainer.innerHTML = `
     <div class="alert alert-${type} alert-dismissible fade show py-2 px-3 small" role="alert">
       ${message}
