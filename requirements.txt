@@ -11,6 +11,10 @@ flake8
 pytest
 websockets
 confluent-kafka
+authlib
+itsdangerous
+python-multipart
+
 
 # ---- FRONTEND / SHARED ----
 httpx

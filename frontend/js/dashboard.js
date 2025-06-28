@@ -1,13 +1,5 @@
 // frontend/dashboard.js
 // /js/dashboard.js
-// import {
-//   renderAlertBarChart,
-//   renderSourceMetricChart,
-//   renderServiceMetricsChart,
-//   renderChart,
-//   renderResolutionChart,
-// } from "/static/js/rendercharts.js";
-
 import { startRealTimeChart } from "/static/js/realtime.js";
 
 import {
@@ -42,6 +34,14 @@ import {
 import { showAlert } from "/static/js/utils.js";
 
 import { loadEventTypes } from "/static/js/filterCache.js";
+
+const params = new URLSearchParams(window.location.search);
+const tokenFromUrl = params.get("token");
+
+if (tokenFromUrl) {
+  localStorage.setItem("token", tokenFromUrl);
+  window.history.replaceState({}, "", "/dashboard");
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   const token = getToken();
