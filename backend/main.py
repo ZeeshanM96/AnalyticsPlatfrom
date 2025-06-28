@@ -5,10 +5,6 @@ from backend.kafka import websocket
 from backend.api.google_oauth import router as google_auth_router
 from starlette.middleware.sessions import SessionMiddleware
 import os
-
-SESSION_SECRET = os.environ.get("SESSION_SECRET")
-
-
 from backend.api import (
     auth,
     sources,
@@ -22,6 +18,7 @@ from backend.api import (
 
 app = FastAPI()
 
+SESSION_SECRET = os.environ.get("SESSION_SECRET")
 # CORS setup
 app.add_middleware(
     CORSMiddleware,

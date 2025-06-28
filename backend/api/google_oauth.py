@@ -19,10 +19,9 @@ oauth.register(
     client_id=GOOGLE_CLIENT_ID,
     client_secret=GOOGLE_CLIENT_SECRET,
     server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-    client_kwargs={
-        "scope": "openid email profile"
-    },
+    client_kwargs={"scope": "openid email profile"},
 )
+
 
 class OAuthCompleteRequest(BaseModel):
     email: str
@@ -43,15 +42,16 @@ async def auth_google_callback(request: Request):
         token = await oauth.google.authorize_access_token(request)
         user_info = token.get("userinfo")
         if not user_info or "email" not in user_info:
-            raise HTTPException(status_code=400, detail="No email found in Google profile")
+            raise HTTPException(
+                status_code=400, detail="No email found in Google profile"
+            )
 
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=400, detail="Google login failed")
 
     email = user_info.get("email")
     if not email:
         raise HTTPException(status_code=400, detail="No email found in Google profile")
-
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -62,14 +62,16 @@ async def auth_google_callback(request: Request):
     if row:
         user_id, role, source_id = row
 
-        cursor.execute("SELECT SourceName FROM Sources WHERE SourceID = ?", (source_id,))
-        source_row = cursor.fetchone()
-        source_name = source_row[0] if source_row else "Unknown"
+        cursor.execute(
+            "SELECT SourceName FROM Sources WHERE SourceID = ?", (source_id,)
+        )
 
         token = create_jwt_token(user_id, email)
 
-        return RedirectResponse(f"http://127.0.0.1:8000/dashboard?token={token}", status_code=303)
-    
+        return RedirectResponse(
+            f"http://127.0.0.1:8000/dashboard?token={token}", status_code=303
+        )
+
     return RedirectResponse(f"http://127.0.0.1:8000/html/login.html?email={email}")
 
 
@@ -96,7 +98,7 @@ async def complete_signup(request: Request):
     # Insert and retrieve UserID in one go
     cursor.execute(
         "INSERT INTO Users (Email, Role, SourceID) OUTPUT INSERTED.UserID VALUES (?, ?, ?)",
-        (email, role, source_id)
+        (email, role, source_id),
     )
     user_id = cursor.fetchone()[0]
     conn.commit()
@@ -104,4 +106,3 @@ async def complete_signup(request: Request):
     token = create_jwt_token(user_id, email)
 
     return RedirectResponse(f"/dashboard?token={token}", status_code=303)
-

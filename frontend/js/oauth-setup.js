@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("login")?.classList.remove("show", "active");
     document.getElementById("signup")?.classList.remove("show", "active");
 
-
     const oauthTab = document.getElementById("oauth-setup");
     oauthTab.classList.add("show", "active");
 
@@ -64,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const data = await res.json();
             alert(data.detail || "Signup failed.");
           }
-        } catch (err) {
+        } catch {
           alert("Network error during OAuth signup.");
         }
       });

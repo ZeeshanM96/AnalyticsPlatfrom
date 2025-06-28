@@ -110,6 +110,3 @@ document.getElementById("signupForm").addEventListener("submit", async (e) => {
     showAlert("Network error during signup.");
   }
 });
-
-
-

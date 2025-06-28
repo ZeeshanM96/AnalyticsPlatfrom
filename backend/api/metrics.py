@@ -12,7 +12,6 @@ security = HTTPBearer()
 
 @router.get("/getsourcemetrics/")
 def get_source_metric_summary(
-
     from_date: str = Query(...),
     to_date: str = Query(...),
     sources: List[str] = Query(...),
