@@ -87,6 +87,13 @@ jobs:
     - name: Run pytest
       env:
         PYTHONPATH: .
+        KAFKA_BROKER: ${{ secrets.KAFKA_BROKER }}
+        DB_TOPIC: ${{ secrets.DB_TOPIC }}
+        WS_TOPIC: ${{ secrets.WS_TOPIC }}
+        CONSUMER_GROUP_DB: ${{ secrets.CONSUMER_GROUP_DB }}
+        CONSUMER_GROUP_WS: ${{ secrets.CONSUMER_GROUP_WS }}
+        PRODUCE_INTERVAL_SEC: ${{ secrets.PRODUCE_INTERVAL_SEC }}
+        MESSAGES_PER_SECOND: ${{ secrets.MESSAGES_PER_SECOND }}
       run: |
         pytest
 
