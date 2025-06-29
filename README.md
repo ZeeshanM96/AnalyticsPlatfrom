@@ -124,6 +124,8 @@ Your can regenerate a smilar schema using database.sql file
 ![screencapture-127-0-0-1-8000-dashboard-2025-06-26-01_11_50_pages-to-jpg-0001](https://github.com/user-attachments/assets/15a9550b-bf6c-469d-bf53-fad9c24cf846)
 
 
+### TODO's:
+Add Observability & Monitoring Stack for Backend & Kafka.
 
 
 ### Additional Notes
