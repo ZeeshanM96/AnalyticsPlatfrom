@@ -8,7 +8,20 @@ from threading import Thread
 import json
 import asyncio
 from backend.db import get_connection
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+# Load Kafka configuration from environment variables
+KAFKA_BROKER = os.getenv("KAFKA_BROKER")
+WS_TOPIC = os.getenv("WS_TOPIC")
+CONSUMER_GROUP_WS = os.getenv("CONSUMER_GROUP_WS")
+
+# Ensure environment variables are set
+required_vars = [KAFKA_BROKER, WS_TOPIC, CONSUMER_GROUP_WS]
+if any(v is None for v in required_vars):
+    raise ValueError("KAFKA_BROKER, WS_TOPIC, CONSUMER_GROUP_WS must be set in .env")
 
 router = APIRouter()
 security = HTTPBearer()
@@ -19,12 +32,12 @@ connected_clients = []
 
 kafka_consumer = Consumer(
     {
-        "bootstrap.servers": "kafka:9092",
-        "group.id": "websocket-group",
+        "bootstrap.servers": KAFKA_BROKER,
+        "group.id": CONSUMER_GROUP_WS,
         "auto.offset.reset": "latest",
     }
 )
-kafka_consumer.subscribe(["websocket-topic"])
+kafka_consumer.subscribe([WS_TOPIC])
 
 event_loop = asyncio.get_event_loop()
 
@@ -62,7 +75,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            await asyncio.sleep(1)  # keep connection alive
+            await asyncio.sleep(1)
     except WebSocketDisconnect:
         print(f"WebSocket disconnected: {email}")
     finally:
@@ -76,6 +89,9 @@ def kafka_listener():
             continue
         try:
             data = json.loads(msg.value())
+            partition = msg.partition()
+
+            print(f"✅ WebSocket Kafka msg from partition {partition}: {data}")
             # Broadcast to all relevant WebSocket clients
             for client in connected_clients:
                 if client["source_id"] == data["source_id"]:
