@@ -12,12 +12,11 @@ load_dotenv()
 # Load Kafka configuration from environment variables
 KAFKA_BROKER = os.getenv("KAFKA_BROKER")
 DB_TOPIC = os.getenv("DB_TOPIC")
-CONSUMER_GROUP_DB=os.getenv("CONSUMER_GROUP_DB")
+CONSUMER_GROUP_DB = os.getenv("CONSUMER_GROUP_DB")
 # Ensure environment variables are set
 required_vars = [KAFKA_BROKER, DB_TOPIC, CONSUMER_GROUP_DB]
 if any(v is None for v in required_vars):
     raise ValueError("KAFKA_BROKER, DB_TOPIC, CONSUMER_GROUP_DB must be set in .env")
-
 
 
 # Retry DB connection

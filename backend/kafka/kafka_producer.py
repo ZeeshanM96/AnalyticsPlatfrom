@@ -18,7 +18,10 @@ MESSAGES_PER_SECOND = int(os.getenv("MESSAGES_PER_SECOND"))
 # Ensure environment variables are set
 required_vars = [KAFKA_BROKER, DB_TOPIC, WS_TOPIC, INTERVAL_SEC, MESSAGES_PER_SECOND]
 if any(v is None for v in required_vars):
-    raise ValueError("KAFKA_BROKER, DB_TOPIC, WS_TOPIC, PRODUCE_INTERVAL_SEC, and MESSAGES_PER_SECOND must be set in .env")
+    raise ValueError(
+        "KAFKA_BROKER, DB_TOPIC, WS_TOPIC, PRODUCE_INTERVAL_SEC, and "
+        "MESSAGES_PER_SECOND must be set in .env"
+    )
 
 
 def delivery_report(err, msg):
@@ -26,6 +29,7 @@ def delivery_report(err, msg):
         print(f"❌ Delivery failed: {err}")
     else:
         print(f"✅ Message delivered to {msg.topic()} [{msg.partition()}]")
+
 
 producer = Producer({"bootstrap.servers": KAFKA_BROKER})
 
@@ -57,4 +61,3 @@ while True:
 
     print(f"Produced {MESSAGES_PER_SECOND} messages to each topic")
     time.sleep(INTERVAL_SEC)
-

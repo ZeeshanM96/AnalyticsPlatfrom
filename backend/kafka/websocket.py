@@ -75,7 +75,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            await asyncio.sleep(1) 
+            await asyncio.sleep(1)
     except WebSocketDisconnect:
         print(f"WebSocket disconnected: {email}")
     finally:
