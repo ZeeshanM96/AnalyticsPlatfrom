@@ -16,7 +16,9 @@ except ValueError:
     raise ValueError("REDIS_PORT must be a valid integer") from None
 
 if not all([REDIS_HOST, REDIS_PORT, API_KEY]):
-    raise ValueError("REDIS_HOST, REDIS_PORT, and API_KEY must be set in the environment")
+    raise ValueError(
+        "REDIS_HOST, REDIS_PORT, and API_KEY must be set in the environment"
+    )
 
 try:
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
@@ -25,10 +27,7 @@ except redis.RedisError as e:
     raise RuntimeError(f"Failed to connect to Redis: {e}") from e
 
 
-data = {
-    "allowed": True,
-    "source_ids": []
-}
+data = {"allowed": True, "source_ids": []}
 
 # Store in Redis if not already present
 if not redis_client.exists(f"api_key:{API_KEY}"):

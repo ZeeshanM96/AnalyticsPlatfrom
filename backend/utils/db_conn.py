@@ -1,4 +1,4 @@
-# backend/db.py
+# backend/utils/db_conn.py
 import os
 import pyodbc
 from dotenv import load_dotenv

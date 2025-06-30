@@ -3,8 +3,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List
-from ..auth import decode_jwt_token, validate_date_range
-from ..db import get_connection
+from backend.utils.auth_utils import decode_jwt_token, validate_date_range
+from backend.utils.db_conn import get_connection
+from backend.utils.db_utils import (
+    get_source_ids_by_names,
+    get_all_metric_types,
+    fetch_source_event_metrics,
+)
+from backend.utils.services_utils import build_source_metric_datasets
 
 router = APIRouter()
 security = HTTPBearer()
@@ -19,27 +25,16 @@ def get_source_metric_summary(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     validate_date_range(from_date, to_date)
+
     payload = decode_jwt_token(credentials.credentials)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    user_id = payload["user_id"]
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=403, detail="User source not found")
-
-    placeholders_src = ",".join("?" for _ in sources)
-    cursor.execute(
-        f"SELECT SourceID, SourceName FROM Sources WHERE SourceName IN ({placeholders_src})",
-        sources,
-    )
-    id_lookup = cursor.fetchall()
-
-    source_map = {name: sid for sid, name in id_lookup}
+    # Validate and resolve source IDs
+    source_map = get_source_ids_by_names(cursor, sources)
     missing_sources = [s for s in sources if s not in source_map]
     if missing_sources:
         raise HTTPException(
@@ -47,41 +42,12 @@ def get_source_metric_summary(
         )
 
     source_ids = list(source_map.values())
-
-    placeholders_met = ",".join("?" for _ in event_type)
-    placeholders_srcid = ",".join("?" for _ in source_ids)
-
-    query = f"""
-        SELECT SourceID, EventType, Count(EventType) as Total
-        FROM Events
-        WHERE EventTime >= ? AND EventTime <= ?
-        AND SourceID IN ({placeholders_srcid})
-        AND EventType IN ({placeholders_met})
-        GROUP BY SourceID, EventType
-    """
-
-    params = [from_date, to_date] + source_ids + event_type
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-
     id_to_name = {v: k for k, v in source_map.items()}
 
-    grouped = {}
-    for source_id, metric, total in rows:
-        source_name = id_to_name.get(source_id, f"Unknown-{source_id}")
-        if metric not in grouped:
-            grouped[metric] = {}
-        grouped[metric][source_name] = total
-
-    all_sources = sorted(set(s for g in grouped.values() for s in g.keys()))
-
-    datasets = []
-    for metric, src_data in grouped.items():
-        datasets.append(
-            {"label": metric, "data": [src_data.get(s, 0) for s in all_sources]}
-        )
-
-    return {"labels": all_sources, "datasets": datasets}
+    rows = fetch_source_event_metrics(
+        cursor, from_date, to_date, source_ids, event_type
+    )
+    return build_source_metric_datasets(rows, id_to_name)
 
 
 @router.get("/getmetricbytypes")
@@ -92,10 +58,4 @@ def get_metric_types(credentials: HTTPAuthorizationCredentials = Depends(securit
 
     conn = get_connection()
     cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT DISTINCT MetricType FROM AggregatedMetrics ORDER BY MetricType"
-    )
-    rows = cursor.fetchall()
-
-    return {"metrics": [row[0] for row in rows]}
+    return {"metrics": get_all_metric_types(cursor)}

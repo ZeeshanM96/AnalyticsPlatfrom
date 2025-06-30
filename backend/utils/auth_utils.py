@@ -1,4 +1,4 @@
-# Backend/auth.py
+# Backend/Utils/auth_utils.py
 import hashlib
 import jwt
 from datetime import datetime, timedelta
@@ -41,6 +41,10 @@ def decode_jwt_token(token: str):
 
 def is_admin(source_id: int) -> bool:
     return source_id == 4
+
+
+def parse_comma_separated(value: str) -> list[str]:
+    return [v.strip() for v in value.split(",") if v.strip()]
 
 
 def validate_date_range(from_date: str, to_date: str, date_format: str = "%Y-%m-%d"):

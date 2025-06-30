@@ -28,11 +28,12 @@ jobs:
 
     - name: Run Black
       run: |
-        black --check backend/
+        run: black --check backend/ kafka/ injestion/
+
 
     - name: Run flake8
       run: |
-        flake8 backend/
+        run: flake8 backend/ kafka/ injestion/
 
   lint-frontend:
     name: Code Quality Check - Frontend

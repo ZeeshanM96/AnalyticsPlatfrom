@@ -17,7 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: python -m backend.kafka.kafka_db_consumer
+    command: python -m kafka.kafka_db_consumer
     env_file:
     - .env
     networks:
@@ -29,7 +29,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: python -m backend.kafka.kafka_external_consumer
+    command: python -m kafka.kafka_external_consumer
     env_file:
       - .env
     networks:
@@ -80,7 +80,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: python -m backend.kafka.kafka_producer
+    command: python -m kafka.kafka_producer
     env_file:
       - .env
     networks:

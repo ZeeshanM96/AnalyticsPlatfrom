@@ -2,12 +2,11 @@
 
 from confluent_kafka import Consumer
 import json
-import time
-from backend.db import get_connection
-from confluent_kafka.admin import AdminClient, NewTopic
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from kafka.kafka_handler import wait_for_kafka_ready, get_connection_with_retry
+
 
 load_dotenv()
 
@@ -24,45 +23,17 @@ if any(v is None for v in required_vars):
     )
 
 
-# Retry DB connection
-def get_connection_with_retry(retries=5, delay=5):
-    for attempt in range(retries):
-        try:
-            print(f"Connecting to DB (attempt {attempt + 1})...")
-            return get_connection()
-        except Exception as e:
-            print(f"DB not ready yet: {e}")
-            time.sleep(delay)
-    raise Exception("Could not connect to DB")
-
-
-# Kafka topic check
-def ensure_topic_exists(admin_client, topic_name):
-    topics = admin_client.list_topics(timeout=5).topics
-    if topic_name not in topics:
-        print(f"Creating Kafka topic: {topic_name}")
-        admin_client.create_topics([NewTopic(topic_name, 1, 1)])
-        time.sleep(1)
-
-
-# Kafka readiness
-def wait_for_kafka_ready():
-    time.sleep(10)
-    admin = AdminClient({"bootstrap.servers": KAFKA_BROKER})
-    ensure_topic_exists(admin, EXTERNAL_TOPIC)
-
-
 kafka_config = {
     "bootstrap.servers": KAFKA_BROKER,
     "group.id": CONSUMER_GROUP_EXTERNAL,
     "auto.offset.reset": "earliest",
 }
 
-wait_for_kafka_ready()
+wait_for_kafka_ready(bootstrap_servers=KAFKA_BROKER, retries=10, delay=5)
 consumer = Consumer(kafka_config)
 consumer.subscribe([EXTERNAL_TOPIC])
 
-init_conn = get_connection_with_retry()
+init_conn = get_connection_with_retry(retries=5, delay=5)
 init_cursor = init_conn.cursor()
 
 # Ensure ExternalSource table exists
@@ -115,7 +86,7 @@ try:
                 continue
 
             print(f"📥 Received: {data}")
-            conn = get_connection_with_retry()
+            conn = get_connection_with_retry(retries=5, delay=5)
             cursor = conn.cursor()
             cursor.execute(
                 """

@@ -1,12 +1,13 @@
 # kafka_producer.py
 from confluent_kafka import Producer
-from backend.db import get_connection
+from backend.utils.db_conn import get_connection
 import time
 import json
 import random
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from kafka.kafka_handler import delivery_report
 
 
 load_dotenv()
@@ -42,13 +43,6 @@ except Exception as e:
     raise RuntimeError(
         "Failed to initialize Kafka producer due to database connection issues"
     ) from e
-
-
-def delivery_report(err, msg):
-    if err is not None:
-        print(f"❌ Delivery failed: {err}")
-    else:
-        print(f"✅ Message delivered to {msg.topic()} [{msg.partition()}]")
 
 
 producer = Producer({"bootstrap.servers": KAFKA_BROKER})
