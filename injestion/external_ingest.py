@@ -21,7 +21,7 @@ REDIS_HOST = os.getenv("REDIS_HOST")
 try:
     REDIS_PORT = int(os.getenv("REDIS_PORT"))
 except ValueError:
-    raise ValueError("REDIS_PORT must be a valid integer")
+    raise ValueError("REDIS_PORT must be a valid integer") from None
 
 # Validate environment variables
 required_vars = [KAFKA_BROKER, WS_TOPIC, DB_TOPIC, EXTERNAL_TOPIC, REDIS_HOST, REDIS_PORT]
@@ -91,8 +91,8 @@ async def ingest_data(websocket: WebSocket):
                         await websocket.send_text("❌ Invalid source_id")
                         continue
                 finally:
-                   if cursor:
-                    cursor.close()
+                    if cursor:
+                        cursor.close()
                     if conn:
                         conn.close()
                 data["timestamp"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")

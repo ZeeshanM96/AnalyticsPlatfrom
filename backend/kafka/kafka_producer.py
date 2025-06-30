@@ -41,7 +41,7 @@ except Exception as e:
     print(f"❌ Failed to fetch source IDs from database: {e}")
     raise RuntimeError(
         "Failed to initialize Kafka producer due to database connection issues"
-    )
+    ) from e
 
 
 def delivery_report(err, msg):
