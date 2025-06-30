@@ -12,18 +12,14 @@ RUN apt-get update && \
         g++ \
         && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy project files
 COPY . .
 
-# Install Python dependencies
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Expose port FastAPI will run on
 EXPOSE 8000
 
-# Start FastAPI app
-CMD bash -c "uvicorn backend.main:app --host 0.0.0.0 --port 8000"
+CMD ["bash", "-c", "python injestion/set_api_key.py && uvicorn backend.main:app --host 0.0.0.0 --port 8000"]
+
 

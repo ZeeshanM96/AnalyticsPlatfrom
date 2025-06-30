@@ -20,6 +20,7 @@ CONSUMER_GROUP_WS = os.getenv("CONSUMER_GROUP_WS")
 
 # Ensure environment variables are set
 required_vars = [KAFKA_BROKER, WS_TOPIC, CONSUMER_GROUP_WS]
+
 if any(v is None for v in required_vars):
     raise ValueError("KAFKA_BROKER, WS_TOPIC, CONSUMER_GROUP_WS must be set in .env")
 
@@ -39,7 +40,11 @@ kafka_consumer = Consumer(
 )
 kafka_consumer.subscribe([WS_TOPIC])
 
-event_loop = asyncio.get_event_loop()
+try:
+    event_loop = asyncio.get_running_loop()
+except RuntimeError:
+    event_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(event_loop)
 
 
 @router.websocket("/ws/data")

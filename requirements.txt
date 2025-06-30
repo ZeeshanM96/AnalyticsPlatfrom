@@ -14,6 +14,7 @@ confluent-kafka
 authlib
 itsdangerous
 python-multipart
+redis
 
 
 # ---- FRONTEND / SHARED ----
