@@ -81,6 +81,10 @@ async def ingest_data(websocket: WebSocket):
                 if "source_id" not in data:
                     await websocket.send_text("❌ Missing 'source_id' in message")
                     continue
+
+                if str(data["source_id"]) not in [str(sid) for sid in source_ids]:
+                    await websocket.send_text("❌ Unauthorized source_id")
+                    continue
                 
                 try:
                     conn = get_connection()
