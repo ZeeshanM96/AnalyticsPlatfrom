@@ -35,19 +35,22 @@ def get_critical_alerts(credentials: HTTPAuthorizationCredentials = Depends(secu
         raise HTTPException(status_code=401, detail="Invalid token")
 
     conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
-    today = date.today()
-    yesterday = today - timedelta(days=1)
-    tomorrow = today + timedelta(days=1)
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+        tomorrow = today + timedelta(days=1)
 
-    counts = get_alert_counts_by_date(cursor, source_id, yesterday, tomorrow)
+        counts = get_alert_counts_by_date(cursor, source_id, yesterday, tomorrow)
 
-    return {
-        "today": counts.get(today.isoformat(), 0),
-        "yesterday": counts.get(yesterday.isoformat(), 0),
-    }
+        return {
+            "today": counts.get(today.isoformat(), 0),
+            "yesterday": counts.get(yesterday.isoformat(), 0),
+        }
+    finally:
+        conn.close()
 
 
 @router.get("/getalertbytypes")
@@ -101,7 +104,7 @@ def get_alert_summary(
     to_date: str,
     batches: Optional[str] = "",
     severities: Optional[str] = "",
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
     validate_date_range(from_date, to_date)
 
