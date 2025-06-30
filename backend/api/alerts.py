@@ -104,7 +104,7 @@ def get_alert_summary(
     to_date: str,
     batches: Optional[str] = "",
     severities: Optional[str] = "",
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     validate_date_range(from_date, to_date)
 
