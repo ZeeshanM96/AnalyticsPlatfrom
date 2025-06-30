@@ -2,10 +2,22 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from ..auth import decode_jwt_token, is_admin, validate_date_range
-from ..db import get_connection
+from backend.utils.auth_utils import (
+    decode_jwt_token,
+    is_admin,
+    validate_date_range,
+    parse_comma_separated,
+)
+from backend.utils.db_conn import get_connection
 from datetime import date, timedelta
-from collections import defaultdict
+from ..utils.db_utils import (
+    get_source_id_by_user,
+    get_distinct_event_types,
+    fetch_event_summary,
+    fetch_batch_event_counts,
+)
+from ..utils.dataclass_utils import AlertResolutionFilter
+from ..utils.services_utils import build_event_dataset
 
 router = APIRouter()
 security = HTTPBearer()
@@ -17,25 +29,16 @@ def get_event_types(credentials: HTTPAuthorizationCredentials = Depends(security
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user_id = payload["user_id"]
     conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=403, detail="User source not found")
-
-    source_id = row[0]
-
-    if is_admin(source_id):
-        cursor.execute("SELECT DISTINCT EventType FROM Events")
-    else:
-        cursor.execute(
-            "SELECT DISTINCT EventType FROM Events WHERE SourceID = ?", (source_id,)
-        )
-
-    return {"eventTypes": [row[0] for row in cursor.fetchall()]}
+        types = get_distinct_event_types(cursor, source_id, admin)
+        return {"eventTypes": types}
+    finally:
+        conn.close()
 
 
 @router.get("/geteventtrends/")
@@ -46,75 +49,36 @@ def get_event_summary(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     validate_date_range(from_date, to_date)
+
     payload = decode_jwt_token(credentials.credentials)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    user_id = payload["user_id"]
     conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=403, detail="User source not found")
+        event_list = parse_comma_separated(events)
+        if not event_list:
+            raise HTTPException(
+                status_code=400, detail="At least one event type is required."
+            )
 
-    source_id = row[0]
-    event_types = [e.strip() for e in events.split(",") if e.strip()]
-
-    if not event_types:
-        raise HTTPException(
-            status_code=400, detail="At least one event type is required."
+        rows = fetch_event_summary(
+            cursor,
+            AlertResolutionFilter(
+                source_id=source_id,
+                from_date=from_date,
+                to_date=to_date,
+                event_types=event_list,
+                is_admin=admin,
+            ),
         )
-
-    placeholders = ", ".join("?" for _ in event_types)
-    params = [from_date, to_date] + event_types
-
-    if is_admin(source_id):
-        source_clause = "1=1"
-    else:
-        source_clause = "SourceID = ?"
-        params = [source_id] + params
-
-    cursor.execute(
-        f"""
-        SELECT
-            CONVERT(date, EventTime) AS EventDate,
-            EventType,
-            COUNT(*) AS Count
-        FROM Events
-        WHERE {source_clause}
-          AND EventTime BETWEEN ? AND ?
-          AND EventType IN ({placeholders})
-        GROUP BY CONVERT(date, EventTime), EventType
-        ORDER BY EventDate, EventType
-    """,
-        params,
-    )
-
-    rows = cursor.fetchall()
-    data = defaultdict(lambda: defaultdict(int))
-    all_dates = set()
-
-    for date_val, event_type, count in rows:
-        date_str = date_val.strftime("%Y-%m-%d")
-        data[event_type][date_str] = count
-        all_dates.add(date_str)
-
-    sorted_dates = sorted(all_dates)
-    datasets = []
-
-    for event_type, date_counts in data.items():
-        datasets.append(
-            {
-                "label": event_type,
-                "data": [date_counts.get(date, 0) for date in sorted_dates],
-                "fill": False,
-                "borderWidth": 2,
-            }
-        )
-
-    return {"labels": sorted_dates, "datasets": datasets}
+        return build_event_dataset(rows)
+    finally:
+        conn.close()
 
 
 @router.get("/getbatchstatus")
@@ -123,40 +87,22 @@ def get_batch_counts(credentials: HTTPAuthorizationCredentials = Depends(securit
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user_id = payload["user_id"]
     conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=403, detail="User source not found")
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+        end_date = today + timedelta(days=1)
 
-    source_id = row[0]
-    today = date.today()
-    yesterday = today - timedelta(days=1)
+        rows = fetch_batch_event_counts(cursor, source_id, yesterday, end_date, admin)
+        counts = {row[0].isoformat(): row[1] for row in rows}
 
-    base_query = """
-        SELECT
-            CAST(EventTime AS DATE) as event_date,
-            COUNT(DISTINCT BatchID)
-        FROM Events
-        WHERE BatchID IS NOT NULL
-          AND EventTime >= ? AND EventTime < ?
-    """
-    params = [yesterday, today + timedelta(days=1)]
-
-    if source_id != 4:
-        base_query += " AND SourceID = ?"
-        params.append(source_id)
-
-    base_query += " GROUP BY CAST(EventTime AS DATE)"
-
-    cursor.execute(base_query, tuple(params))
-    rows = cursor.fetchall()
-
-    counts = {row[0].isoformat(): row[1] for row in rows}
-    return {
-        "today": counts.get(today.isoformat(), 0),
-        "yesterday": counts.get(yesterday.isoformat(), 0),
-    }
+        return {
+            "today": counts.get(today.isoformat(), 0),
+            "yesterday": counts.get(yesterday.isoformat(), 0),
+        }
+    finally:
+        conn.close()

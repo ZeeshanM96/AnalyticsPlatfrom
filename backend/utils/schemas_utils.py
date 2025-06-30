@@ -8,3 +8,20 @@ class SignupRequest(BaseModel):
     confirm_password: str
     role: Literal["Client", "Developer"]
     source: Literal["MarketingAPI", "User Activity", "PlatformMonitor", "AWS"]
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class PreferenceUpdate(BaseModel):
+    viewName: str
+    preferredView: str
+    enabled: bool
+
+
+class OAuthCompleteRequest(BaseModel):
+    email: EmailStr
+    role: str
+    source: str

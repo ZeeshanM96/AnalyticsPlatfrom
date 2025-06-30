@@ -2,11 +2,27 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from ..auth import decode_jwt_token, is_admin, validate_date_range
-from ..db import get_connection
+from backend.utils.auth_utils import (
+    decode_jwt_token,
+    is_admin,
+    validate_date_range,
+    parse_comma_separated,
+)
+
+from backend.utils.db_conn import get_connection
 from datetime import date, timedelta
 from typing import Optional
-from collections import defaultdict
+from backend.utils.db_utils import (
+    get_source_id_by_user,
+    get_alert_counts_by_date,
+    fetch_alert_summary,
+    get_distinct_alert_types,
+    get_distinct_severities,
+    get_distinct_batches,
+)
+from backend.utils.services_utils import build_alert_chart_dataset
+from backend.utils.dataclass_utils import AlertSummaryFilter
+
 
 router = APIRouter()
 security = HTTPBearer()
@@ -18,43 +34,77 @@ def get_critical_alerts(credentials: HTTPAuthorizationCredentials = Depends(secu
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user_id = payload["user_id"]
     conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=403, detail="User source not found")
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+        tomorrow = today + timedelta(days=1)
 
-    source_id = row[0]
-    today = date.today()
-    yesterday = today - timedelta(days=1)
+        counts = get_alert_counts_by_date(cursor, source_id, yesterday, tomorrow)
 
-    base_query = """
-        SELECT
-            CAST(TriggeredAt AS DATE) as alert_date,
-            COUNT(*)
-        FROM Alerts
-        WHERE Severity = 'Critical'
-          AND TriggeredAt >= ? AND TriggeredAt < ?
-    """
-    params = [yesterday, today + timedelta(days=1)]
+        return {
+            "today": counts.get(today.isoformat(), 0),
+            "yesterday": counts.get(yesterday.isoformat(), 0),
+        }
+    finally:
+        conn.close()
 
-    if source_id != 4:
-        base_query += " AND SourceID = ?"
-        params.append(source_id)
 
-    base_query += " GROUP BY CAST(TriggeredAt AS DATE)"
+@router.get("/getalertbytypes")
+def get_alert_types(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    payload = decode_jwt_token(credentials.credentials)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    cursor.execute(base_query, tuple(params))
-    rows = cursor.fetchall()
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    counts = {row[0].isoformat(): row[1] for row in rows}
-    return {
-        "today": counts.get(today.isoformat(), 0),
-        "yesterday": counts.get(yesterday.isoformat(), 0),
-    }
+        types = get_distinct_alert_types(cursor, source_id, admin)
+        return {"alertTypes": types}
+    finally:
+        conn.close()
+
+
+@router.get("/getbatches")
+def get_alert_batches(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    payload = decode_jwt_token(credentials.credentials)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
+
+        batch_ids = get_distinct_batches(cursor, source_id, admin)
+        return {"batchIds": batch_ids}
+    finally:
+        conn.close()
+
+
+@router.get("/getseveritiesbytypes")
+def get_alert_severities(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    payload = decode_jwt_token(credentials.credentials)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
+
+        severities = get_distinct_severities(cursor, source_id, admin)
+        return {"severities": severities}
+    finally:
+        conn.close()
 
 
 @router.get("/getalertsbybatch")
@@ -66,162 +116,34 @@ def get_alert_summary(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     validate_date_range(from_date, to_date)
+
     payload = decode_jwt_token(credentials.credentials)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user_id = payload["user_id"]
     conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=403, detail="User source not found")
+        user_id = payload["user_id"]
+        source_id = get_source_id_by_user(cursor, user_id)
+        admin = is_admin(source_id)
 
-    source_id = row[0]
-    batch_list = [b.strip() for b in batches.split(",") if b.strip()]
-    severity_list = [s.strip() for s in severities.split(",") if s.strip()]
+        batch_list = parse_comma_separated(batches)
+        severity_list = parse_comma_separated(severities)
 
-    query = """
-        SELECT
-            BatchID,
-            Severity,
-            COUNT(*) as count
-        FROM Alerts
-        WHERE TriggeredAt BETWEEN ? AND ?
-    """
-    params = [from_date, to_date]
-
-    if source_id != 4:
-        query += " AND SourceID = ?"
-        params.append(source_id)
-
-    if batch_list:
-        placeholders = ", ".join("?" for _ in batch_list)
-        query += f" AND BatchID IN ({placeholders})"
-        params.extend(batch_list)
-
-    if severity_list:
-        placeholders = ", ".join("?" for _ in severity_list)
-        query += f" AND Severity IN ({placeholders})"
-        params.extend(severity_list)
-
-    query += " GROUP BY BatchID, Severity ORDER BY BatchID"
-
-    cursor.execute(query, tuple(params))
-    rows = cursor.fetchall()
-
-    result = defaultdict(lambda: defaultdict(int))
-    batch_set = set()
-
-    for batch_id, alert_type, count in rows:
-        result[alert_type][batch_id] = count
-        batch_set.add(batch_id)
-
-    sorted_batches = sorted(batch_set)
-    datasets = []
-    for alert_type, batch_counts in result.items():
-        datasets.append(
-            {
-                "label": alert_type,
-                "data": [batch_counts.get(bid, 0) for bid in sorted_batches],
-                "borderWidth": 2,
-                "fill": False,
-            }
+        rows = fetch_alert_summary(
+            cursor,
+            AlertSummaryFilter(
+                source_id=source_id,
+                from_date=from_date,
+                to_date=to_date,
+                batch_ids=batch_list,
+                severities=severity_list,
+                is_admin=admin,
+            ),
         )
 
-    return {"labels": sorted_batches, "datasets": datasets}
-
-
-@router.get("/getalertbytypes")
-def get_alert_types(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    payload = decode_jwt_token(credentials.credentials)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (payload["user_id"],))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=403, detail="User source not found")
-
-    source_id = row[0]
-
-    if is_admin(source_id):
-        cursor.execute("SELECT DISTINCT AlertType FROM Alerts")
-    else:
-        cursor.execute(
-            "SELECT DISTINCT AlertType FROM Alerts WHERE SourceID = ?", (source_id,)
-        )
-
-    return {"alertTypes": [row[0] for row in cursor.fetchall()]}
-
-
-@router.get("/getbatches")
-def get_alert_batches(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    payload = decode_jwt_token(credentials.credentials)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-    user_id = payload["user_id"]
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=403, detail="User source not found")
-
-    source_id = row[0]
-
-    if is_admin(source_id):
-        cursor.execute(
-            """
-            SELECT DISTINCT BatchID
-            FROM Batches
-            WHERE BatchID IS NOT NULL
-            ORDER BY BatchID
-        """
-        )
-    else:
-        cursor.execute(
-            """
-            SELECT DISTINCT BatchID
-            FROM Batches
-            WHERE BatchID IS NOT NULL AND SourceID = ?
-            ORDER BY BatchID
-        """,
-            (source_id,),
-        )
-
-    return {"batchIds": [row[0] for row in cursor.fetchall()]}
-
-
-@router.get("/getseveritiesbytypes")
-def get_alert_severities(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    payload = decode_jwt_token(credentials.credentials)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (payload["user_id"],))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=403, detail="User source not found")
-
-    source_id = row[0]
-
-    if is_admin(source_id):
-        cursor.execute("SELECT DISTINCT Severity FROM Alerts ORDER BY Severity")
-    else:
-        cursor.execute(
-            "SELECT DISTINCT Severity FROM Alerts WHERE SourceID = ? ORDER BY Severity",
-            (source_id,),
-        )
-
-    return {"severities": [row[0] for row in cursor.fetchall()]}
+        return build_alert_chart_dataset(rows)
+    finally:
+        conn.close()

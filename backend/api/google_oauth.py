@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Request, HTTPException
 from starlette.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
-from pydantic import BaseModel
-from ..db import get_connection
-from ..auth import create_jwt_token
+from backend.utils.db_conn import get_connection
+from backend.utils.auth_utils import create_jwt_token
 import os
 
 router = APIRouter()
@@ -21,12 +20,6 @@ oauth.register(
     server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
     client_kwargs={"scope": "openid email profile"},
 )
-
-
-class OAuthCompleteRequest(BaseModel):
-    email: str
-    role: str
-    source: str
 
 
 @router.get("/auth/google")

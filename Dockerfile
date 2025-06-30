@@ -23,3 +23,6 @@ EXPOSE 8000
 CMD ["bash", "-c", "python injestion/set_api_key.py && uvicorn backend.main:app --host 0.0.0.0 --port 8000"]
 
 
+
+
+
