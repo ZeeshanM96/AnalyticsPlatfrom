@@ -54,11 +54,22 @@ Digital Analytics Dashboard is a full-stack, containerized web application for r
   This script reads `API_KEY`, `REDIS_HOST`, and `REDIS_PORT` from your `.env` and stores the key in Redis.
 
 - **WebSocket Ingestion Endpoint:**  
-  Send real-time metrics to the backend via WebSocket at:
+  Test the end to send real-time metrics to the backend via WebSocket at:
   ```
   ws://localhost:8000/ws/ingest?api_key=YOUR_API_KEY
   ```
-  The endpoint is implemented in [`injestion/external_ingest.py`](injestion/external_ingest.py).  
+  First you'll get the response if the authentication was successfull. Send a request and request body should be something like this:
+  ```
+  {
+  "source_id": 1,
+  "metric_name": "Humidity",
+  "value": 60.4
+  }
+  ```
+  and response would be:
+  ![image](https://github.com/user-attachments/assets/e6c1332f-1cb5-4da0-908a-9b1998332f83)
+
+  The endpoint is implemented in [`backend/websocket/websocket.py`](backend/websocket/websocket.py).  
   Only registered API keys are allowed. Each message must include `source_id`, `metric_name`, and `value`.
 
 - **Kafka Integration:**  
