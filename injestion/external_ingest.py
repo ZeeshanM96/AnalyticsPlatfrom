@@ -1,6 +1,6 @@
 # injestion/external_ingest.py
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, status
-from datetime import datetime
+from datetime import timezone
 from redis import Redis
 from confluent_kafka import Producer
 from backend.db import get_connection
@@ -30,7 +30,15 @@ if any(v is None for v in required_vars):
         "Environment variables KAFKA_BROKER, WS_TOPIC, DB_TOPIC, EXTERNAL_TOPIC, REDIS_HOST, and REDIS_PORT must be set."
     )
 
-producer = Producer({'bootstrap.servers': KAFKA_BROKER})
+producer = None
+def get_producer():
+    global producer
+    if producer is None:
+        try:
+            producer = Producer({'bootstrap.servers': KAFKA_BROKER})
+        except Exception as e:
+            raise RuntimeError(f"Failed to create Kafka producer: {e}") from e
+    return producer
 
 def get_redis_client() -> Redis:
     try:
@@ -43,13 +51,14 @@ def get_redis_client() -> Redis:
 
 def verify_api_key(api_key: str):
     redis_client = get_redis_client()
-    if not redis_client:
-        return None
     record = redis_client.get(f"api_key:{api_key}")
     if not record:
         return None
-    data = json.loads(record)
-    return data if data.get("allowed", False) else None
+    try:
+        data = json.loads(record)
+        return data if data.get("allowed", False) else None
+    except json.JSONDecodeError:
+        return None
 
 
 @router.websocket("/ws/ingest")
@@ -99,13 +108,13 @@ async def ingest_data(websocket: WebSocket):
                         cursor.close()
                     if conn:
                         conn.close()
-                data["timestamp"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")
+                data["timestamp"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
 
                 key = str(data["source_id"]).encode("utf-8")
                 value = json.dumps(data).encode("utf-8")
 
                 # Produce to Kafka
-                producer.produce(EXTERNAL_TOPIC, key=key, value=value)
+                producer = get_producer()
                 producer.flush()
 
                 await websocket.send_text("✅ Published to Kafka")
