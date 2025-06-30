@@ -94,7 +94,10 @@ try:
         if msg.error():
             print("Kafka error:", msg.error())
             continue
-
+        
+        data = None
+        conn = None
+        cursor = None
         try:
             data = json.loads(msg.value().decode("utf-8"))
             # Validate required fields
@@ -129,13 +132,15 @@ try:
         except Exception as e:
             print(f"❌ DB Insert Error: {e} | Data: {data}")
             try:
-                conn.rollback()
+                if conn:
+                    conn.rollback()
             except Exception:
                 pass
         finally:
             try:
-                cursor.close()
-                conn.close()
+                if cursor:
+                    cursor.close()
+                    conn.close()
             except Exception:
                 pass
 
@@ -144,4 +149,3 @@ except KeyboardInterrupt:
     print("Shutting down...")
 finally:
     consumer.close()
-    conn.close()

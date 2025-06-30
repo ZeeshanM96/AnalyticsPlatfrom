@@ -82,17 +82,19 @@ async def ingest_data(websocket: WebSocket):
                     await websocket.send_text("❌ Missing 'source_id' in message")
                     continue
                 
-                conn = get_connection()
-                cursor = conn.cursor()
+                try:
+                    conn = get_connection()
+                    cursor = conn.cursor()
 
-                cursor.execute("SELECT 1 FROM Sources WHERE SourceID = ?", (data["source_id"]))
-                if not cursor.fetchone():
-                    await websocket.send_text("❌ Invalid source_id")
+                    cursor.execute("SELECT 1 FROM Sources WHERE SourceID = ?", (data["source_id"]))
+                    if not cursor.fetchone():
+                        await websocket.send_text("❌ Invalid source_id")
+                        continue
+                finally:
+                   if cursor:
                     cursor.close()
-                    conn.close()
-                    continue
-                cursor.close()
-                conn.close()
+                    if conn:
+                        conn.close()
                 data["timestamp"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")
 
                 key = str(data["source_id"]).encode("utf-8")

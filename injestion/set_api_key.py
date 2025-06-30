@@ -11,9 +11,9 @@ REDIS_PORT = os.getenv("REDIS_PORT")
 API_KEY = os.getenv("API_KEY")
 
 try:
-    REDIS_PORT = int(os.getenv("REDIS_PORT"))
+    REDIS_PORT = int(REDIS_PORT)
 except ValueError:
-    raise ValueError("REDIS_PORT must be a valid integer")
+    raise ValueError("REDIS_PORT must be a valid integer") from None
 
 if not all([REDIS_HOST, REDIS_PORT, API_KEY]):
     raise ValueError("REDIS_HOST, REDIS_PORT, and API_KEY must be set in the environment")

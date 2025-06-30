@@ -27,15 +27,19 @@ if any(v is None for v in required_vars):
         "MESSAGES_PER_SECOND must be set in .env"
     )
 
-conn = get_connection()
-cursor = conn.cursor()
+try:
+    conn = get_connection()
+    cursor = conn.cursor()
 
-cursor.execute("SELECT SourceID FROM Sources")
-source_ids = [row[0] for row in cursor.fetchall()]
-conn.close()
+    cursor.execute("SELECT SourceID FROM Sources")
+    source_ids = [row[0] for row in cursor.fetchall()]
+    conn.close()
 
-if not source_ids:
-    raise RuntimeError("❌ No source IDs found in Sources table.")
+    if not source_ids:
+        raise RuntimeError("❌ No source IDs found in Sources table.")
+except Exception as e:
+    print(f"❌ Failed to fetch source IDs from database: {e}")
+    raise RuntimeError("Failed to initialize Kafka producer due to database connection issues")
 
 
 def delivery_report(err, msg):
