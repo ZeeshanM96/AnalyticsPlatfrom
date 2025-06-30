@@ -27,13 +27,11 @@ jobs:
         pip install black flake8
 
     - name: Run Black
-      run: |
-        run: black --check backend/ kafka/ injestion/
+      run: black --check backend/ kafka/ injestion/
 
 
     - name: Run flake8
-      run: |
-        run: flake8 backend/ kafka/ injestion/
+      run: flake8 backend/ kafka/ injestion/
 
   lint-frontend:
     name: Code Quality Check - Frontend
