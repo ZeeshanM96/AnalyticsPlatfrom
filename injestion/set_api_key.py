@@ -22,7 +22,7 @@ try:
     redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
     redis_client.ping()
 except redis.RedisError as e:
-    raise RuntimeError(f"Failed to connect to Redis: {e}") from None
+    raise RuntimeError(f"Failed to connect to Redis: {e}") from e
 
 
 data = {
