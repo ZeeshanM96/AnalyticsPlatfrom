@@ -15,8 +15,8 @@ from ..utils.db_utils import (
     get_distinct_event_types,
     fetch_event_summary,
     fetch_batch_event_counts,
-    AlertResolutionFilter,
 )
+from ..utils.dataclass_utils import AlertResolutionFilter
 from ..utils.services_utils import build_event_dataset
 
 router = APIRouter()
@@ -55,28 +55,30 @@ def get_event_summary(
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
-    admin = is_admin(source_id)
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    event_list = parse_comma_separated(events)
-    if not event_list:
-        raise HTTPException(
-            status_code=400, detail="At least one event type is required."
+        event_list = parse_comma_separated(events)
+        if not event_list:
+            raise HTTPException(
+                status_code=400, detail="At least one event type is required."
+            )
+
+        rows = fetch_event_summary(
+            cursor,
+            AlertResolutionFilter(
+                source_id=source_id,
+                from_date=from_date,
+                to_date=to_date,
+                event_types=event_list,
+                is_admin=admin,
+            ),
         )
-
-    rows = fetch_event_summary(
-        cursor,
-        AlertResolutionFilter(
-            source_id=source_id,
-            from_date=from_date,
-            to_date=to_date,
-            event_types=event_list,
-            is_admin=admin,
-        ),
-    )
-
-    return build_event_dataset(rows)
+        return build_event_dataset(rows)
+    finally:
+        conn.close()
 
 
 @router.get("/getbatchstatus")
@@ -86,18 +88,21 @@ def get_batch_counts(credentials: HTTPAuthorizationCredentials = Depends(securit
         raise HTTPException(status_code=401, detail="Invalid token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
-    admin = is_admin(source_id)
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    today = date.today()
-    yesterday = today - timedelta(days=1)
-    end_date = today + timedelta(days=1)
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+        end_date = today + timedelta(days=1)
 
-    rows = fetch_batch_event_counts(cursor, source_id, yesterday, end_date, admin)
-    counts = {row[0].isoformat(): row[1] for row in rows}
+        rows = fetch_batch_event_counts(cursor, source_id, yesterday, end_date, admin)
+        counts = {row[0].isoformat(): row[1] for row in rows}
 
-    return {
-        "today": counts.get(today.isoformat(), 0),
-        "yesterday": counts.get(yesterday.isoformat(), 0),
-    }
+        return {
+            "today": counts.get(today.isoformat(), 0),
+            "yesterday": counts.get(yesterday.isoformat(), 0),
+        }
+    finally:
+        conn.close()

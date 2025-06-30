@@ -21,7 +21,7 @@ from backend.utils.db_utils import (
     get_distinct_batches,
 )
 from backend.utils.services_utils import build_alert_chart_dataset
-from backend.utils.db_utils import AlertSummaryFilter
+from backend.utils.dataclass_utils import AlertSummaryFilter
 
 
 router = APIRouter()
@@ -110,25 +110,28 @@ def get_alert_summary(
         raise HTTPException(status_code=401, detail="Invalid token")
 
     conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    user_id = payload["user_id"]
-    source_id = get_source_id_by_user(cursor, user_id)
-    admin = is_admin(source_id)
+        user_id = payload["user_id"]
+        source_id = get_source_id_by_user(cursor, user_id)
+        admin = is_admin(source_id)
 
-    batch_list = parse_comma_separated(batches)
-    severity_list = parse_comma_separated(severities)
+        batch_list = parse_comma_separated(batches)
+        severity_list = parse_comma_separated(severities)
 
-    rows = fetch_alert_summary(
-        cursor,
-        AlertSummaryFilter(
-            source_id=source_id,
-            from_date=from_date,
-            to_date=to_date,
-            batch_ids=batch_list,
-            severities=severity_list,
-            is_admin=admin,
-        ),
-    )
+        rows = fetch_alert_summary(
+            cursor,
+            AlertSummaryFilter(
+                source_id=source_id,
+                from_date=from_date,
+                to_date=to_date,
+                batch_ids=batch_list,
+                severities=severity_list,
+                is_admin=admin,
+            ),
+        )
 
-    return build_alert_chart_dataset(rows)
+        return build_alert_chart_dataset(rows)
+    finally:
+        conn.close()

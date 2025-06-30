@@ -45,10 +45,13 @@ def update_user_preferences(
     validate_preferences(preferences)
 
     conn = get_connection()
-    cursor = conn.cursor()
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
 
-    update_preferences_by_source(cursor, source_id, preferences)
-    conn.commit()
+        update_preferences_by_source(cursor, source_id, preferences)
+        conn.commit()
 
-    return {"success": True, "message": "Preferences updated successfully"}
+        return {"success": True, "message": "Preferences updated successfully"}
+    finally:
+        conn.close()
