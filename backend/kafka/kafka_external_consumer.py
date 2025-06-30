@@ -26,6 +26,19 @@ if any(v is None for v in required_vars):
 
 # Retry DB connection
 def get_connection_with_retry(retries=5, delay=5):
+    """
+    Attempt to establish a database connection, retrying multiple times with a delay between attempts.
+    
+    Parameters:
+        retries (int): Maximum number of connection attempts.
+        delay (int): Seconds to wait between retries.
+    
+    Returns:
+        A database connection object if successful.
+    
+    Raises:
+        Exception: If unable to connect after all retries.
+    """
     for attempt in range(retries):
         try:
             print(f"Connecting to DB (attempt {attempt + 1})...")
@@ -38,6 +51,11 @@ def get_connection_with_retry(retries=5, delay=5):
 
 # Kafka topic check
 def ensure_topic_exists(admin_client, topic_name):
+    """
+    Ensure that a Kafka topic exists, creating it if necessary.
+    
+    If the specified topic does not exist, it is created with one partition and a replication factor of one.
+    """
     topics = admin_client.list_topics(timeout=5).topics
     if topic_name not in topics:
         print(f"Creating Kafka topic: {topic_name}")
@@ -47,6 +65,11 @@ def ensure_topic_exists(admin_client, topic_name):
 
 # Kafka readiness
 def wait_for_kafka_ready():
+    """
+    Waits for Kafka to become ready and ensures the external topic exists.
+    
+    This function pauses execution to allow Kafka services to initialize, then creates an AdminClient and verifies that the required external topic is present, creating it if necessary.
+    """
     time.sleep(10)
     admin = AdminClient({"bootstrap.servers": KAFKA_BROKER})
     ensure_topic_exists(admin, EXTERNAL_TOPIC)

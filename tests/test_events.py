@@ -54,6 +54,11 @@ def test_get_event_types(mock_admin, mock_conn_func, mock_jwt, mock_redis):
 @patch("backend.api.events.is_admin", return_value=False)
 @patch("backend.api.events.validate_date_range", return_value=None)
 def test_get_event_trends_success(mock_validate, mock_admin, mock_conn_func, mock_jwt, mock_redis):
+    """
+    Test the /geteventtrends endpoint for successful retrieval of event trend data.
+    
+    Sends a GET request with date range and event type parameters, asserting a 200 response and that the JSON contains 'labels' and 'datasets' keys.
+    """
     response = client.get(
         "/geteventtrends/?from_date=2024-01-01&to_date=2024-01-02&events=Login",
         headers=fake_headers
@@ -67,6 +72,11 @@ def test_get_event_trends_success(mock_validate, mock_admin, mock_conn_func, moc
 @patch("backend.api.events.decode_jwt_token", return_value=fake_payload)
 @patch("backend.api.events.get_connection", return_value=mock_conn_batch)
 def test_get_batch_status(mock_conn_func, mock_jwt, mock_redis):
+    """
+    Tests the /getbatchstatus endpoint for successful retrieval of batch status data.
+    
+    Sends a GET request to the endpoint and verifies that the response contains the expected keys for "today" and "yesterday".
+    """
     response = client.get("/getbatchstatus", headers=fake_headers)
     assert response.status_code == 200
     body = response.json()

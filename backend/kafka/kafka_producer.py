@@ -39,6 +39,11 @@ if not source_ids:
 
 
 def delivery_report(err, msg):
+    """
+    Prints the result of a Kafka message delivery attempt.
+    
+    If delivery fails, prints an error message; otherwise, prints the topic and partition of the delivered message.
+    """
     if err is not None:
         print(f"❌ Delivery failed: {err}")
     else:

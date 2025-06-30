@@ -33,6 +33,12 @@ if any(v is None for v in required_vars):
 producer = Producer({'bootstrap.servers': KAFKA_BROKER})
 
 def get_redis_client() -> Redis:
+    """
+    Create and return a Redis client connected to the configured host and port.
+    
+    Raises:
+        RuntimeError: If the connection to Redis cannot be established.
+    """
     try:
         client = Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
         client.ping() 
@@ -42,6 +48,11 @@ def get_redis_client() -> Redis:
 
 
 def verify_api_key(api_key: str):
+    """
+    Validates an API key by checking its authorization status in Redis.
+    
+    Retrieves the record associated with the given API key from Redis, parses it as JSON, and returns the data if the key is marked as allowed. Returns None if the key is missing, not allowed, or if Redis is unavailable.
+    """
     redis_client = get_redis_client()
     if not redis_client:
         return None
@@ -54,6 +65,11 @@ def verify_api_key(api_key: str):
 
 @router.websocket("/ws/ingest")
 async def ingest_data(websocket: WebSocket):
+    """
+    Handles a WebSocket connection for ingesting external metric data, authenticating clients via API key and publishing validated messages to Kafka.
+    
+    Clients must provide a valid API key as a query parameter. Upon successful authentication, the endpoint receives JSON messages containing metric data, validates required fields and source ID, timestamps the data, and publishes it to a Kafka topic. Error messages are sent for authentication failures, missing fields, invalid source IDs, or processing errors. The connection is closed if authentication fails or the client disconnects.
+    """
     await websocket.accept()
     
     api_key = websocket.query_params.get("api_key")
