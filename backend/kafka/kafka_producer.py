@@ -39,7 +39,9 @@ try:
         raise RuntimeError("❌ No source IDs found in Sources table.")
 except Exception as e:
     print(f"❌ Failed to fetch source IDs from database: {e}")
-    raise RuntimeError("Failed to initialize Kafka producer due to database connection issues")
+    raise RuntimeError(
+        "Failed to initialize Kafka producer due to database connection issues"
+    )
 
 
 def delivery_report(err, msg):

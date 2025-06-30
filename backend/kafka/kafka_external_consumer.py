@@ -94,7 +94,7 @@ try:
         if msg.error():
             print("Kafka error:", msg.error())
             continue
-        
+
         data = None
         conn = None
         cursor = None
