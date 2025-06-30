@@ -1,5 +1,6 @@
 # kafka_producer.py
 from confluent_kafka import Producer
+from backend.db import get_connection
 import time
 import json
 import random
@@ -9,19 +10,32 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
+
 # Load Kafka configuration from environment variables
 KAFKA_BROKER = os.getenv("KAFKA_BROKER")
 DB_TOPIC = os.getenv("DB_TOPIC")
 WS_TOPIC = os.getenv("WS_TOPIC")
 INTERVAL_SEC = float(os.getenv("PRODUCE_INTERVAL_SEC"))
 MESSAGES_PER_SECOND = int(os.getenv("MESSAGES_PER_SECOND"))
+
 # Ensure environment variables are set
 required_vars = [KAFKA_BROKER, DB_TOPIC, WS_TOPIC, INTERVAL_SEC, MESSAGES_PER_SECOND]
+
 if any(v is None for v in required_vars):
     raise ValueError(
         "KAFKA_BROKER, DB_TOPIC, WS_TOPIC, PRODUCE_INTERVAL_SEC, and "
         "MESSAGES_PER_SECOND must be set in .env"
     )
+
+conn = get_connection()
+cursor = conn.cursor()
+
+cursor.execute("SELECT SourceID FROM Sources")
+source_ids = [row[0] for row in cursor.fetchall()]
+conn.close()
+
+if not source_ids:
+    raise RuntimeError("❌ No source IDs found in Sources table.")
 
 
 def delivery_report(err, msg):
@@ -33,9 +47,10 @@ def delivery_report(err, msg):
 
 producer = Producer({"bootstrap.servers": KAFKA_BROKER})
 
+
 while True:
     for _ in range(MESSAGES_PER_SECOND):
-        source_id = random.choice([1, 2, 3, 4])
+        source_id = random.choice(source_ids)
         metric_name = "CPU_Usage" if source_id == 4 else "BatchCount"
         metric_value = (
             round(random.uniform(10.0, 95.0), 2)

@@ -1,4 +1,4 @@
-version: '3.9'
+# docker-compose.yml
 
 services:
   fastapi:
@@ -10,7 +10,6 @@ services:
       - .env
     ports:
       - "8000:8000"
-
     networks:
       - backend
   
@@ -25,6 +24,28 @@ services:
       - backend
     depends_on:
       - kafka
+
+  kafka-external-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python -m backend.kafka.kafka_external_consumer
+    env_file:
+      - .env
+    networks:
+      - backend
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+
 
   zookeeper:
     image: bitnami/zookeeper:latest
@@ -59,7 +80,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["python", "backend/kafka/kafka_producer.py"]
+    command: python -m backend.kafka.kafka_producer
     env_file:
       - .env
     networks:

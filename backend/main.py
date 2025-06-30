@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.kafka import websocket
 from backend.api.google_oauth import router as google_auth_router
+from injestion.external_ingest import router as ingest_router
 from starlette.middleware.sessions import SessionMiddleware
 import os
 from backend.api import (
@@ -51,3 +52,4 @@ app.include_router(preferences.router)
 app.include_router(metrics.router)
 app.include_router(websocket.router)
 app.include_router(google_auth_router)
+app.include_router(ingest_router)

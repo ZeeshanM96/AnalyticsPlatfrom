@@ -77,6 +77,13 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+    
+    - name: Install Microsoft ODBC Driver for SQL Server (Ubuntu 24.04 workaround)
+      run: |
+        curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+        sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/ubuntu/22.04/prod jammy main"
+        sudo apt-get update
+        sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17 unixodbc-dev
 
     - name: Install dependencies
       run: |
@@ -90,10 +97,16 @@ jobs:
         KAFKA_BROKER: ${{ secrets.KAFKA_BROKER }}
         DB_TOPIC: ${{ secrets.DB_TOPIC }}
         WS_TOPIC: ${{ secrets.WS_TOPIC }}
+        EXTERNAL_TOPIC: ${{ secrets.EXTERNAL_TOPIC }}
         CONSUMER_GROUP_DB: ${{ secrets.CONSUMER_GROUP_DB }}
         CONSUMER_GROUP_WS: ${{ secrets.CONSUMER_GROUP_WS }}
+        CONSUMER_GROUP_EXTERNAL: ${{ secrets.CONSUMER_GROUP_EXTERNAL }}
         PRODUCE_INTERVAL_SEC: ${{ secrets.PRODUCE_INTERVAL_SEC }}
         MESSAGES_PER_SECOND: ${{ secrets.MESSAGES_PER_SECOND }}
+
+        REDIS_HOST: ${{ secrets.REDIS_HOST }}
+        REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        API_KEY: ${{ secrets.API_KEY }}
       run: |
         pytest
 
