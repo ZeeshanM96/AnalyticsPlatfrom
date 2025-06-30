@@ -1,6 +1,6 @@
 # injestion/external_ingest.py
 from fastapi import WebSocket, WebSocketDisconnect, APIRouter, status
-from datetime import timezone
+from datetime import datetime, timezone
 from redis import Redis
 from confluent_kafka import Producer
 from backend.db import get_connection
