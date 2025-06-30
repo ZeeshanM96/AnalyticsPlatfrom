@@ -6,6 +6,7 @@ import asyncio
 import time
 from backend.utils.db_conn import get_connection
 from confluent_kafka.admin import AdminClient, NewTopic
+import logging
 
 load_dotenv()
 
@@ -20,7 +21,7 @@ if any(v is None for v in [KAFKA_BROKER, WS_TOPIC, CONSUMER_GROUP_WS, DB_TOPIC])
         "KAFKA_BROKER, WS_TOPIC, DB_TOPIC, CONSUMER_GROUP_WS must be set in .env"
     )
 
-connected_clients = []
+logger = logging.getLogger(__name__)
 
 try:
     event_loop = asyncio.get_running_loop()
@@ -43,24 +44,27 @@ kafka_consumer.subscribe([WS_TOPIC])
 def ensure_topic_exists(admin_client, topic_name):
     topics = admin_client.list_topics(timeout=5).topics
     if topic_name not in topics:
-        print(f"Creating Kafka topic: {topic_name}")
+        logger.info(f"Creating Kafka topic: {topic_name}")
         admin_client.create_topics([NewTopic(topic_name, 1, 1)])
         time.sleep(1)
 
 
 # Kafka readiness
-def wait_for_kafka_ready(bootstrap_servers=KAFKA_BROKER, retries=10, delay=5):
-    time.sleep(10)
+def wait_for_kafka_ready(
+    bootstrap_servers=KAFKA_BROKER, retries=10, delay=5, initial_delay=5
+):
+    if initial_delay > 0:
+        time.sleep(initial_delay)
     admin_client = AdminClient({"bootstrap.servers": bootstrap_servers})
     ensure_topic_exists(admin_client, DB_TOPIC)
     for attempt in range(retries):
         try:
             cluster_metadata = admin_client.list_topics(timeout=5)
             if cluster_metadata.topics is not None:
-                print("Kafka is ready.")
+                logger.info("Kafka is ready.")
                 return
         except Exception as e:
-            print(f"Waiting for Kafka... (attempt {attempt + 1}) -> {e}")
+            logger.warning(f"Waiting for Kafka... (attempt {attempt + 1}) -> {e}")
         time.sleep(delay)
     raise RuntimeError("Kafka is not ready after several retries.")
 
@@ -69,16 +73,16 @@ def wait_for_kafka_ready(bootstrap_servers=KAFKA_BROKER, retries=10, delay=5):
 def get_connection_with_retry(retries=5, delay=5):
     for attempt in range(retries):
         try:
-            print(f"Trying to connect to DB (attempt {attempt + 1}/{retries})...")
+            logger.info(f"Trying to connect to DB (attempt {attempt + 1}/{retries})...")
             return get_connection()
         except Exception as e:
-            print(f"DB not ready yet: {e}")
+            logger.warning(f"DB not ready yet: {e}")
             time.sleep(delay)
     raise Exception("Could not connect to DB after retries.")
 
 
 def delivery_report(err, msg):
     if err is not None:
-        print(f"❌ Delivery failed: {err}")
+        logger.error(f"❌ Delivery failed: {err}")
     else:
-        print(f"✅ Message delivered to {msg.topic()} [{msg.partition()}]")
+        logger.info(f"✅ Message delivered to {msg.topic()} [{msg.partition()}]")

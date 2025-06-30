@@ -24,11 +24,13 @@ def get_user_preferences(credentials: HTTPAuthorizationCredentials = Depends(sec
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
-    preferences = get_preferences_by_source(cursor, source_id)
-
-    return {"sourceId": source_id, "preferences": preferences}
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        preferences = get_preferences_by_source(cursor, source_id)
+        return {"sourceId": source_id, "preferences": preferences}
+    finally:
+        conn.close()
 
 
 @router.post("/updatepreferences")

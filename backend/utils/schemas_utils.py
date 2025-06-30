@@ -22,6 +22,6 @@ class PreferenceUpdate(BaseModel):
 
 
 class OAuthCompleteRequest(BaseModel):
-    email: str
+    email: EmailStr
     role: str
     source: str

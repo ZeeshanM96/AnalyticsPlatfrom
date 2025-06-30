@@ -13,6 +13,7 @@ from ..utils.db_utils import (
     get_all_sources,
     get_source_id_by_user,
     fetch_alert_resolution_summary,
+    get_source_name_by_id,
 )
 from ..utils.services_utils import build_resolution_summary_dataset
 
@@ -34,19 +35,20 @@ def get_sources_by_id(credentials: HTTPAuthorizationCredentials = Depends(securi
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
-    admin = is_admin(source_id)
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    if admin:
-        sources = get_all_sources(cursor)
-    else:
-        cursor.execute(
-            "SELECT SourceName FROM Sources WHERE SourceID = ?", (source_id,)
-        )
-        sources = [row[0] for row in cursor.fetchall()]
+        if admin:
+            sources = get_all_sources(cursor)
+        else:
+            source_name = get_source_name_by_id(cursor, source_id)
+            sources = [source_name]
 
-    return {"sources": sources}
+        return {"sources": sources}
+    finally:
+        conn.close()
 
 
 @router.get("/getalertsbysource")

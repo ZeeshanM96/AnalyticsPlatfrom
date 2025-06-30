@@ -23,7 +23,8 @@ services:
     networks:
       - backend
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
 
   kafka-external-consumer:
     build:

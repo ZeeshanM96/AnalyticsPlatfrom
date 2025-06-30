@@ -21,6 +21,7 @@ from backend.utils.db_utils import (
     get_distinct_batches,
 )
 from backend.utils.services_utils import build_alert_chart_dataset
+from backend.utils.db_utils import AlertSummaryFilter
 
 
 router = APIRouter()
@@ -120,12 +121,14 @@ def get_alert_summary(
 
     rows = fetch_alert_summary(
         cursor,
-        source_id,
-        from_date,
-        to_date,
-        batch_list,
-        severity_list,
-        is_admin=admin,
+        AlertSummaryFilter(
+            source_id=source_id,
+            from_date=from_date,
+            to_date=to_date,
+            batch_ids=batch_list,
+            severities=severity_list,
+            is_admin=admin,
+        ),
     )
 
     return build_alert_chart_dataset(rows)

@@ -27,11 +27,14 @@ def get_services_status(credentials: HTTPAuthorizationCredentials = Depends(secu
         raise HTTPException(status_code=401, detail="Invalid token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-    return {
-        "total": count_all_services(cursor),
-        "running": count_running_services(cursor),
-    }
+    try:
+        cursor = conn.cursor()
+        return {
+            "total": count_all_services(cursor),
+            "running": count_running_services(cursor),
+        }
+    finally:
+        conn.close()
 
 
 @router.get("/getservices")
@@ -60,15 +63,17 @@ def get_service_metrics_api(
         raise HTTPException(status_code=401, detail="Invalid token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-
-    service_names = parse_comma_separated(services)
-    metric_types = parse_comma_separated(metrics)
-
     try:
+        cursor = conn.cursor()
+
+        service_names = parse_comma_separated(services)
+        metric_types = parse_comma_separated(metrics)
+
         rows = fetch_service_metrics(
             cursor, from_date, to_date, service_names, metric_types
         )
         return build_service_metric_dataset(rows)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+    finally:
+        conn.close()

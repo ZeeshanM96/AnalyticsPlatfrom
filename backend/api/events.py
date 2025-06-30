@@ -15,6 +15,7 @@ from ..utils.db_utils import (
     get_distinct_event_types,
     fetch_event_summary,
     fetch_batch_event_counts,
+    AlertResolutionFilter,
 )
 from ..utils.services_utils import build_event_dataset
 
@@ -29,12 +30,15 @@ def get_event_types(credentials: HTTPAuthorizationCredentials = Depends(security
         raise HTTPException(status_code=401, detail="Invalid token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
-    admin = is_admin(source_id)
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    types = get_distinct_event_types(cursor, source_id, admin)
-    return {"eventTypes": types}
+        types = get_distinct_event_types(cursor, source_id, admin)
+        return {"eventTypes": types}
+    finally:
+        conn.close()
 
 
 @router.get("/geteventtrends/")
@@ -61,7 +65,17 @@ def get_event_summary(
             status_code=400, detail="At least one event type is required."
         )
 
-    rows = fetch_event_summary(cursor, source_id, from_date, to_date, event_list, admin)
+    rows = fetch_event_summary(
+        cursor,
+        AlertResolutionFilter(
+            source_id=source_id,
+            from_date=from_date,
+            to_date=to_date,
+            event_types=event_list,
+            is_admin=admin,
+        ),
+    )
+
     return build_event_dataset(rows)
 
 

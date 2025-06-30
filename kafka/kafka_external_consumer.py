@@ -27,9 +27,12 @@ kafka_config = {
     "bootstrap.servers": KAFKA_BROKER,
     "group.id": CONSUMER_GROUP_EXTERNAL,
     "auto.offset.reset": "earliest",
+    "enable.auto.commit": True,
 }
 
-wait_for_kafka_ready(bootstrap_servers=KAFKA_BROKER, retries=10, delay=5)
+wait_for_kafka_ready(
+    bootstrap_servers=KAFKA_BROKER, retries=10, delay=5, initial_delay=5
+)
 consumer = Consumer(kafka_config)
 consumer.subscribe([EXTERNAL_TOPIC])
 

@@ -38,9 +38,12 @@ kafka_config = {
     "bootstrap.servers": KAFKA_BROKER,
     "group.id": CONSUMER_GROUP_DB,
     "auto.offset.reset": "earliest",
+    "enable.auto.commit": True,
 }
 
-wait_for_kafka_ready(bootstrap_servers=KAFKA_BROKER, retries=10, delay=5)
+wait_for_kafka_ready(
+    bootstrap_servers=KAFKA_BROKER, retries=10, delay=5, initial_delay=5
+)
 consumer = create_kafka_consumer_with_retry(kafka_config, DB_TOPIC)
 conn = get_connection_with_retry(retries=5, delay=5)
 cursor = conn.cursor()
@@ -86,14 +89,17 @@ try:
                 """
                 INSERT INTO RealTimeData (source_id, metric_name, value, timestamp)
                 VALUES (?, ?, ?, ?)
-            """,
-                data["source_id"],
-                data["metric_name"],
-                data["value"],
-                data["timestamp"],
+                """,
+                (
+                    data["source_id"],
+                    data["metric_name"],
+                    data["value"],
+                    data["timestamp"],
+                ),
             )
             conn.commit()
         except Exception as e:
+            print(f"❌ Error processing message: {msg.value()}")
             print(f"DB Insert Error: {e}")
             conn.rollback()
 

@@ -3,6 +3,7 @@
 from fastapi import HTTPException
 from datetime import date
 from backend.utils.constants import ADMIN_SOURCE_ID
+from backend.utils.dataclass_utils import AlertSummaryFilter, AlertResolutionFilter
 
 
 def get_source_id_by_user(cursor, user_id: int) -> int:
@@ -170,15 +171,7 @@ def update_preferences_by_source(cursor, source_id: int, preferences: list):
         )
 
 
-def fetch_alert_summary(
-    cursor,
-    source_id: int,
-    from_date: str,
-    to_date: str,
-    batch_ids: list[str],
-    severities: list[str],
-    is_admin: bool,
-):
+def fetch_alert_summary(cursor, filter: AlertSummaryFilter):
     query = """
         SELECT
             BatchID,
@@ -187,43 +180,36 @@ def fetch_alert_summary(
         FROM Alerts
         WHERE TriggeredAt BETWEEN ? AND ?
     """
-    params = [from_date, to_date]
+    params = [filter.from_date, filter.to_date]
 
-    if not is_admin:
+    if not filter.is_admin:
         query += " AND SourceID = ?"
-        params.append(source_id)
+        params.append(filter.source_id)
 
-    if batch_ids:
-        placeholders = ", ".join("?" for _ in batch_ids)
+    if filter.batch_ids:
+        placeholders = ", ".join("?" for _ in filter.batch_ids)
         query += f" AND BatchID IN ({placeholders})"
-        params.extend(batch_ids)
+        params.extend(filter.batch_ids)
 
-    if severities:
-        placeholders = ", ".join("?" for _ in severities)
+    if filter.severities:
+        placeholders = ", ".join("?" for _ in filter.severities)
         query += f" AND Severity IN ({placeholders})"
-        params.extend(severities)
+        params.extend(filter.severities)
 
     query += " GROUP BY BatchID, Severity ORDER BY BatchID"
     cursor.execute(query, tuple(params))
     return cursor.fetchall()
 
 
-def fetch_event_summary(
-    cursor,
-    source_id: int,
-    from_date: str,
-    to_date: str,
-    event_types: list[str],
-    is_admin: bool,
-):
-    placeholders = ", ".join("?" for _ in event_types)
-    params = [from_date, to_date] + event_types
+def fetch_event_summary(cursor, filter: AlertResolutionFilter):
+    placeholders = ", ".join("?" for _ in filter.event_types)
+    params = [filter.from_date, filter.to_date] + filter.event_types
 
-    if is_admin:
+    if filter.is_admin:
         source_clause = "1=1"
     else:
         source_clause = "SourceID = ?"
-        params = [source_id] + params
+        params = [filter.source_id] + params
 
     cursor.execute(
         f"""

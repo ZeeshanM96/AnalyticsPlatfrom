@@ -69,14 +69,16 @@ async def websocket_endpoint(websocket: WebSocket):
         return
 
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (user_id,))
-    row = cursor.fetchone()
-    if not row:
-        await websocket.close(code=1008)
-        return
-
-    source_id = row[0]
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT SourceID FROM Users WHERE UserID = ?", (user_id,))
+        row = cursor.fetchone()
+        if not row:
+            await websocket.close(code=1008)
+            return
+        source_id = row[0]
+    finally:
+        conn.close()
     await websocket.accept()
     print(f"Accepted connection for user {email} (source_id={source_id})")
 
@@ -168,8 +170,12 @@ async def ingest_data(websocket: WebSocket):
 
                 # Produce to Kafka
                 producer = get_producer()
-                producer.produce(EXTERNAL_TOPIC, key=key, value=value)
-                producer.flush()
+                try:
+                    producer.produce(EXTERNAL_TOPIC, key=key, value=value)
+                    producer.flush()
+                except Exception as kafka_error:
+                    await websocket.send_text(f"❌ Kafka error: {kafka_error}")
+                    continue
 
                 await websocket.send_text("✅ Published to Kafka")
             except Exception as e:
