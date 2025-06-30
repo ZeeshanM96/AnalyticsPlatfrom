@@ -60,12 +60,15 @@ def get_alert_types(credentials: HTTPAuthorizationCredentials = Depends(security
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
-    admin = is_admin(source_id)
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    types = get_distinct_alert_types(cursor, source_id, admin)
-    return {"alertTypes": types}
+        types = get_distinct_alert_types(cursor, source_id, admin)
+        return {"alertTypes": types}
+    finally:
+        conn.close()
 
 
 @router.get("/getbatches")
@@ -75,12 +78,15 @@ def get_alert_batches(credentials: HTTPAuthorizationCredentials = Depends(securi
         raise HTTPException(status_code=401, detail="Invalid token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
-    admin = is_admin(source_id)
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    batch_ids = get_distinct_batches(cursor, source_id, admin)
-    return {"batchIds": batch_ids}
+        batch_ids = get_distinct_batches(cursor, source_id, admin)
+        return {"batchIds": batch_ids}
+    finally:
+        conn.close()
 
 
 @router.get("/getseveritiesbytypes")
@@ -90,12 +96,15 @@ def get_alert_severities(credentials: HTTPAuthorizationCredentials = Depends(sec
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     conn = get_connection()
-    cursor = conn.cursor()
-    source_id = get_source_id_by_user(cursor, payload["user_id"])
-    admin = is_admin(source_id)
+    try:
+        cursor = conn.cursor()
+        source_id = get_source_id_by_user(cursor, payload["user_id"])
+        admin = is_admin(source_id)
 
-    severities = get_distinct_severities(cursor, source_id, admin)
-    return {"severities": severities}
+        severities = get_distinct_severities(cursor, source_id, admin)
+        return {"severities": severities}
+    finally:
+        conn.close()
 
 
 @router.get("/getalertsbybatch")
