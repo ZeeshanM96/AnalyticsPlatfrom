@@ -2,39 +2,38 @@
 
 ## Description
 
-Digital Analytics Dashboard is a full-stack, containerized web application for real-time monitoring and analytics of business events, alerts, and service metrics. It features secure OAuth based authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights.
+Digital Analytics Dashboard is a full-stack, containerized web application for real-time monitoring and analytics of business events, alerts, and service metrics. The platform features secure OAuth and JWT-based authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights.
 
-The platform supports real-time data updates via WebSockets, powered by a Kafka message bus, enabling live streaming of metrics and alerts to the frontend. Data is ingested and processed through Kafka producers and consumers, with persistent storage in a SQL database. Users can customize their dashboard views and preferences for a tailored analytics experience.
-
-The backend is built with FastAPI and integrates with Kafka and SQL databases, while the frontend is a responsive HTML/CSS/JS application using Chart.js for visualizations. The entire stack is dockerized for easy deployment, and CI/CD pipelines are included for automated testing and code quality.
+**Real-time data ingestion** is supported via a WebSocket API, allowing external sources to stream metrics directly into the system. Data is validated, authorized via API keys (managed in Redis), and published to Kafka topics for downstream processing. Kafka consumers persist data to SQL Server and front-end, enabling live updates and historical analytics. The backend is built with FastAPI, while the frontend is a responsive HTML/CSS/JS application using Chart.js for visualizations. The stack is fully dockerized for easy deployment along with complete CI/CD pipeline
 
 ---
 
 ## Features
 
-- **User Authentication** (OAuth)
-- **Role-based Access Control** (Admin/User)
-- **Real-time Alerts & Notifications**
-- **Batch & Severity-based Alert Summaries**
+- **User Authentication** (OAuth, JWT)
+- **Role-based Access Control** (Client/Developer)
+- **API Key Management** for secure external ingestion (via Redis)
+- **Real-time Data Ingestion** via WebSocket API
+- **Kafka-based Streaming** for metrics and events
 - **Interactive Charts & Visualizations** (Chart.js)
 - **User Preferences & Customization**
-- **RESTful API Endpoints**
+- **RESTful API Endpoints** (FastAPI)
 - **Responsive Frontend** (Bootstrap 5)
 - **Dockerized Deployment**
 - **CI/CD with GitHub Actions**
-- **Kafka-based Data Ingestion and Streaming**
 - **Real-time Data Updates via WebSockets**
+- **Modular FastAPI Backend** with clear separation of API, ingestion, and Kafka logic
 
 ---
 
 ## Tools & Technologies
 
 - **Database:** Microsoft SQL Server
-- **Backend:** FastAPI, SQLAlchemy, PyODBC, Pydantic, PyJWT, Confluent-Kafka
+- **Backend:** FastAPI, Pydantic, PyJWT, Confluent-Kafka, Redis
+- **Ingestion:** FastAPI WebSocket, Redis (API key store), Kafka Producer
+- **Kafka:** Confluent-Kafka Python client (Producer/Consumer)
 - **Frontend:** HTML5, CSS3, JavaScript (ES6+), Bootstrap 5, Chart.js
-- **Real-Time:** Kafka, WebSocket (FastAPI)
-- **Authentication:** OAuth 
-- **Database:** SQL Server (or compatible, via ODBC)
+- **Authentication:** OAuth (Google), JWT
 - **Testing:** Pytest, FastAPI TestClient
 - **Linting/Formatting:** Flake8, Black, Prettier, ESLint, Stylelint
 - **Containerization:** Docker, Docker Compose
@@ -42,13 +41,31 @@ The backend is built with FastAPI and integrates with Kafka and SQL databases, w
 
 ---
 
-## Getting Started
-### Prerequisites
+## Data Ingestion & Real-Time Flow
 
-- [Docker](https://www.docker.com/get-started) & [Docker Compose](https://docs.docker.com/compose/)
-- (Optional for local dev) Python 3.10+ and pip
+### External Data Ingestion
 
-### Installation
+- External sources can ingest data in real-time via a WebSocket endpoint exposed by the backend.
+- **API Key Registration:**  
+  Before sending data, register your API key in Redis using the script [`injestion/set_api_key.py`](injestion/set_api_key.py):
+  ```sh
+  python injestion/set_api_key.py
+  ```
+  This script reads `API_KEY`, `REDIS_HOST`, and `REDIS_PORT` from your `.env` and stores the key in Redis.
+
+- **WebSocket Ingestion Endpoint:**  
+  Send real-time metrics to the backend via WebSocket at:
+  ```
+  ws://localhost:8000/ws/ingest?api_key=YOUR_API_KEY
+  ```
+  The endpoint is implemented in [`injestion/external_ingest.py`](injestion/external_ingest.py).  
+  Only registered API keys are allowed. Each message must include `source_id`, `metric_name`, and `value`.
+
+- **Kafka Integration:**  
+  Ingested data is published to Kafka topics (`EXTERNAL_TOPIC`, etc.), and backend consumers process and persist the data to SQL Server.
+
+
+## Installation
 
 1. **Clone the repository:**
    ```sh
@@ -77,8 +94,17 @@ Create and setup your `.env` file and update with your database connection and s
    KAFKA_BROKER=YOUR_BROKER:YOUR_PORT
    DB_TOPIC=YOUR_DBTOPIC
    WS_TOPIC=YOUR_WSTOPIC
+   EXTERNAL_TOPIC=YOUR_EXTERNAL_TOPIC
    CONSUMER_GROUP_DB=YOUR_DB_WRITE_GROUP
    CONSUMER_GROUP_WS=YOUR_WS_GROUP
+   CONSUMER_GROUP_EXTERNAL=YOUR_CONSUMER_GROUP_EXTERNAL
+   PRODUCE_INTERVAL_SEC=1
+   MESSAGES_PER_SECOND=1
+
+   # Ingestion config
+   REDIS_HOST=YOUR_REDIS_HOST
+   REDIS_PORT=YOUR_REDIS_PORT
+   API_KEY=YOUR_API_KEY
 
    # Google OAuth config
    GOOGLE_CLIENT_ID = YOUR_GOOGLE_CLIENT_ID
@@ -112,7 +138,7 @@ Or locally:
 pip install -r requirements.txt
 pytest
 ```
- 
+
 ### System Design:
 
 ### DB design:
