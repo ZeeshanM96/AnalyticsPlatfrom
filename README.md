@@ -4,7 +4,7 @@
 
 Digital Analytics Dashboard is a full-stack, containerized web application for real-time monitoring and analytics of business events, alerts, and service metrics. The platform features secure OAuth and JWT-based authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights.
 
-**Real-time data ingestion** is supported via a WebSocket API, allowing external sources to stream metrics directly into the system. Data is validated, authorized via API keys (managed in Redis), and published to Kafka topics for downstream processing. Kafka consumers persist data to SQL Server and front-end, enabling live updates and historical analytics. The backend is built with FastAPI, while the frontend is a responsive HTML/CSS/JS application using Chart.js for visualizations. The stack is fully dockerized for easy deployment along with complete CI/CD pipeline
+**Real-time data ingestion** is supported via a WebSocket API, allowing external sources to stream metrics directly into the system. Data is validated, authorized via API keys and secret keys (managed in Redis), and published to Kafka topics for downstream processing. Kafka consumers persist data to SQL Server and front-end, enabling live updates and historical analytics. The backend is built with FastAPI, while the frontend is a responsive HTML/CSS/JS application using Chart.js for visualizations. The stack is fully dockerized for easy deployment along with complete CI/CD pipeline
 
 ---
 
@@ -47,18 +47,15 @@ Digital Analytics Dashboard is a full-stack, containerized web application for r
 
 - External sources can ingest data in real-time via a WebSocket endpoint exposed by the backend.
 - **API Key Registration:**  
-  Before sending data, register your API key in Redis using the script [`injestion/set_api_key.py`](injestion/set_api_key.py):
-  ```sh
-  python injestion/set_api_key.py
-  ```
-  This script reads `API_KEY`, `REDIS_HOST`, and `REDIS_PORT` from your `.env` and stores the key in Redis.
+  Before sending data, make sure `API_KEY` and `SECRET_KEY` exists for the specfic `SOURCEID`:
 
 - **WebSocket Ingestion Endpoint:**  
   Test the end to send real-time metrics to the backend via WebSocket at:
   ```
-  ws://localhost:8000/ws/ingest?api_key=YOUR_API_KEY
+  ws://localhost:8000/ws/ingest
   ```
-  First you'll get the response if the authentication was successfull. Send a request and request body should be something like this:
+  Make sure header must include `API_KEY`, `SECRET_KEY` and `SOURCEID` before making a request.
+  Add a message body with matching below format:
   ```
   {
   "source_id": 1,
@@ -70,7 +67,9 @@ Digital Analytics Dashboard is a full-stack, containerized web application for r
   ![image](https://github.com/user-attachments/assets/e6c1332f-1cb5-4da0-908a-9b1998332f83)
 
   The endpoint is implemented in [`backend/websocket/websocket.py`](backend/websocket/websocket.py).  
-  Only registered API keys are allowed. Each message must include `source_id`, `metric_name`, and `value`.
+  Only registered `API_KEY`, `SECRET_KEY` and `SOURCEID` are allowed.
+
+  Test the websocket endpoint under `scripttotest` folder. Run the scripts and make sure headers and body is set before you make a request.
 
 - **Kafka Integration:**  
   Ingested data is published to Kafka topics (`EXTERNAL_TOPIC`, etc.), and backend consumers process and persist the data to SQL Server.
@@ -171,7 +170,8 @@ Your can regenerate a smilar schema using database.sql file
 
 
 ### TODO's:
-Add Observability & Monitoring Stack for Backend & Kafka.
+- Add Apache Flink for ETL pipeline.
+- Add Observability & Monitoring Stack for Backend & Kafka via Prometheus/Grafana/Loki.
 
 
 ### Additional Notes
