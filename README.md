@@ -123,8 +123,17 @@ Create and setup your `.env` file and update with your database connection and s
    SESSION_SECRET= YOUR_SESSION_SECRET
    ```
    Your can regenerate a smilar schema by running `database.sql` file
+
+3. **Create and Acitivate the virtual ENV**
+  ```sh
+  python -m venv virenv
+  ```
+  then:
+  ```sh
+  .\virenv\Scripts\Activate.ps1
+  ```
    
-3. **Build and Run with Docker**
+. **Build and Run with Docker**
    Just for good practice pull down all the containers:
    ```sh
    docker compose down --volumes --remove-orphans
@@ -137,7 +146,7 @@ Create and setup your `.env` file and update with your database connection and s
 - The backend will be available at [http://localhost:8000](http://localhost:8000)
 - The frontend is served via FastAPI static routes (e.g., `/html/login.html`, `/html/dashboard.html`)
 
-4. **Run Tests (Optional)**
+5. **Run Tests (Optional)**
 
 ```sh
 docker-compose run --rm fastapi pytest
