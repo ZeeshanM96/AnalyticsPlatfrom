@@ -4,17 +4,30 @@ import { showToast } from "./dashboard.js";
 document.addEventListener("DOMContentLoaded", function () {
   function generateKey(length = 100) {
     const charset =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_-+=<>?";
-    let key = "";
-    for (let i = 0; i < length; i++) {
-      key += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    return key;
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    return Array.from(array, (byte) => charset[byte % charset.length]).join("");
   }
 
   function copyToClipboard(fieldId) {
     const field = document.getElementById(fieldId);
-    navigator.clipboard.writeText(field.value);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(field.value)
+        .then(() => showToast("✅ Copied to clipboard!"))
+        .catch(() => {
+          field.select();
+          field.setSelectionRange(0, 99999);
+          document.execCommand("copy");
+          showToast("✅ Copied to clipboard!");
+        });
+    } else {
+      field.select();
+      field.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+      showToast("✅ Copied to clipboard!");
+    }
   }
 
   // Visibility toggle + copy
@@ -68,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       if (!token) {
-        alert("User is not authenticated.");
+        showToast("User is not authenticated.", true);
         return;
       }
 
@@ -108,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       } catch (err) {
         console.error(err);
-        alert("Network error. Please try again.");
+        showToast("Network error. Please try again.", true);
       }
     });
 });

@@ -13,6 +13,16 @@ JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRATION_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", 60))
 FERNET_KEY = os.getenv("FERNET_KEY")
+
+if not FERNET_KEY:
+    raise ValueError("FERNET_KEY environment variable is required but not set")
+
+try:
+    fernet = Fernet(FERNET_KEY)
+except Exception as e:
+    raise ValueError(f"Invalid FERNET_KEY format: {e}")
+
+
 fernet = Fernet(FERNET_KEY)
 
 
