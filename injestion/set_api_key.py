@@ -1,37 +1,31 @@
 # injestion/set_api_key.py
-
-import redis
 import json
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-REDIS_HOST = os.getenv("REDIS_HOST")
-REDIS_PORT = os.getenv("REDIS_PORT")
-API_KEY = os.getenv("API_KEY")
-
-try:
-    REDIS_PORT = int(REDIS_PORT)
-except ValueError:
-    raise ValueError("REDIS_PORT must be a valid integer") from None
-
-if not all([REDIS_HOST, REDIS_PORT, API_KEY]):
-    raise ValueError(
-        "REDIS_HOST, REDIS_PORT, and API_KEY must be set in the environment"
-    )
-
-try:
-    redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-    redis_client.ping()
-except redis.RedisError as e:
-    raise RuntimeError(f"Failed to connect to Redis: {e}") from e
+from injestion.external_ingest import get_redis_client
+from backend.utils.db_utils import get_all_keys
+from backend.utils.db_conn import get_connection
 
 
-data = {"allowed": True, "source_ids": []}
+def prewarm_api_credentials():
+    redis_client = get_redis_client()
+    conn = get_connection()
+    cursor = conn.cursor()
 
-# Store in Redis if not already present
-if not redis_client.exists(f"api_key:{API_KEY}"):
-    redis_client.set(f"api_key:{API_KEY}", json.dumps(data))
-    print("✅ API key saved to Redis.")
-else:
-    print("ℹ️ API key already exists in Redis.")
+    try:
+        all_keys = get_all_keys(cursor)
+
+        for entry in all_keys:
+            source_id = entry["source_id"]
+            api_key = entry["api_key"]
+            secret_key = entry["secret_key"]
+
+            redis_key = f"api_key:{api_key}"
+            redis_value = json.dumps(
+                {"secret_key": secret_key, "source_id": source_id, "allowed": True}
+            )
+
+            redis_client.setex(redis_key, 3600, redis_value)
+            print(f"✅ Cached API key for source_id={source_id}")
+
+    finally:
+        cursor.close()
+        conn.close()

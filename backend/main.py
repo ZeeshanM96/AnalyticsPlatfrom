@@ -1,9 +1,11 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.websocket import websocket
 from backend.api.google_oauth import router as google_auth_router
 from injestion.external_ingest import router as ingest_router
+from injestion.set_api_key import prewarm_api_credentials
 from starlette.middleware.sessions import SessionMiddleware
 import os
 from backend.api import (
@@ -18,7 +20,15 @@ from backend.api import (
     set_apikey as apikey,
 )
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    _ = app  # Access 'app' to avoid unused variable warning
+    prewarm_api_credentials()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 SESSION_SECRET = os.environ.get("SESSION_SECRET")
 # CORS setup
