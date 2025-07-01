@@ -25,3 +25,8 @@ class OAuthCompleteRequest(BaseModel):
     email: EmailStr
     role: str
     source: str
+
+
+class CredentialRequest(BaseModel):
+    ApiKey: str
+    SecretKey: str

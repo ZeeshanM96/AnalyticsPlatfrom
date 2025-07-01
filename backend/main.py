@@ -15,6 +15,7 @@ from backend.api import (
     preferences,
     metrics,
     frontend,
+    set_apikey as apikey,
 )
 
 app = FastAPI()
@@ -53,3 +54,4 @@ app.include_router(metrics.router)
 app.include_router(websocket.router)
 app.include_router(google_auth_router)
 app.include_router(ingest_router)
+app.include_router(apikey.router)
