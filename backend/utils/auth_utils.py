@@ -23,8 +23,6 @@ except Exception as e:
     raise ValueError(f"Invalid FERNET_KEY format: {e}")
 
 
-fernet = Fernet(FERNET_KEY)
-
 
 def encrypt_key(plain_text: str) -> str:
     return fernet.encrypt(plain_text.encode()).decode()
