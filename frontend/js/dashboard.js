@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-function showToast(message, isError = false) {
+export function showToast(message, isError = false) {
   const toastEl = document.getElementById("preferencesToast");
   const toastMessage = document.getElementById("toastMessage");
 

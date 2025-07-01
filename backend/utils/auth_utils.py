@@ -3,6 +3,7 @@ import hashlib
 import jwt
 from datetime import datetime, timedelta
 from fastapi import HTTPException
+from cryptography.fernet import Fernet
 import os
 from dotenv import load_dotenv
 
@@ -11,6 +12,16 @@ load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRATION_MINUTES = int(os.getenv("JWT_EXPIRATION_MINUTES", 60))
+FERNET_KEY = os.getenv("FERNET_KEY")
+fernet = Fernet(FERNET_KEY)
+
+
+def encrypt_key(plain_text: str) -> str:
+    return fernet.encrypt(plain_text.encode()).decode()
+
+
+def decrypt_key(cipher_text: str) -> str:
+    return fernet.decrypt(cipher_text.encode()).decode()
 
 
 def hash_password(password: str) -> bytes:

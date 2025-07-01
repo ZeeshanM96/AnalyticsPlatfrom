@@ -1,9 +1,10 @@
 # This file contains utility functions for database operations related to alerts and user sources.
 
 from fastapi import HTTPException
-from datetime import date
+from datetime import date, datetime
 from backend.utils.constants import ADMIN_SOURCE_ID
 from backend.utils.dataclass_utils import AlertSummaryFilter, AlertResolutionFilter
+from backend.utils.auth_utils import encrypt_key, decrypt_key
 
 
 def get_source_id_by_user(cursor, user_id: int) -> int:
@@ -12,6 +13,76 @@ def get_source_id_by_user(cursor, user_id: int) -> int:
     if not row:
         raise HTTPException(status_code=403, detail="User source not found")
     return row[0]
+
+
+def credentials_exist(cursor, source_id: int, created_by: str) -> bool:
+    cursor.execute(
+        """
+        SELECT COUNT(*) FROM ApiCredentials
+        WHERE SourceId = ? AND CreatedBy = ?
+    """,
+        (source_id, created_by),
+    )
+    return cursor.fetchone()[0] > 0
+
+
+def insert_api_credential(
+    cursor, api_key: str, secret_key: str, source_id: int, created_by: str
+) -> None:
+    cursor.execute(
+        """
+        INSERT INTO ApiCredentials (
+            ApiKey, SecretKey, SourceId, CreatedBy, DateCreated, DateUpdated
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            encrypt_key(api_key),
+            encrypt_key(secret_key),
+            source_id,
+            created_by,
+            datetime.now(),
+            datetime.now(),
+        ),
+    )
+
+
+def update_api_credential(
+    cursor, api_key: str, secret_key: str, source_id: int, created_by: str
+) -> None:
+    cursor.execute(
+        """
+        UPDATE ApiCredentials
+        SET ApiKey = ?, SecretKey = ?, DateUpdated = ?
+        WHERE SourceId = ? AND CreatedBy = ?
+    """,
+        (
+            encrypt_key(api_key),
+            encrypt_key(secret_key),
+            datetime.now(),
+            source_id,
+            created_by,
+        ),
+    )
+
+
+def get_api_credentials(cursor, source_id: int, created_by: str) -> dict:
+    cursor.execute(
+        """
+        SELECT ApiKey, SecretKey FROM ApiCredentials
+        WHERE SourceId = ? AND CreatedBy = ?
+    """,
+        (source_id, created_by),
+    )
+
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="No credentials found")
+
+    api_key = decrypt_key(row[0])
+    secret_key = decrypt_key(row[1])
+
+    return {"api_key": api_key, "secret_key": secret_key}
 
 
 def get_all_sources(cursor) -> list[str]:

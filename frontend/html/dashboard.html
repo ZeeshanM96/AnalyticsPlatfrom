@@ -58,9 +58,21 @@
               ><strong>Source:</strong> <span id="userSource"></span
             ></a>
             <div class="dropdown-divider"></div>
-            <button id="setPreferencesBtn" class="dropdown-item text-primary">
+            <button
+              id="setPreferencesBtn"
+              style="font-weight: 550"
+              class="dropdown-item text-primary"
+            >
               Set Preferences
             </button>
+            <button
+              id="setApiKeyBtn"
+              style="font-weight: 550"
+              class="dropdown-item text-success"
+            >
+              Get API Key
+            </button>
+            <div class="dropdown-divider"></div>
             <button id="logoutBtn" class="dropdown-item text-danger">
               Logout
             </button>
@@ -603,6 +615,109 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal for API Key generation-->
+    <div
+      class="modal fade"
+      id="apiKeyModal"
+      tabindex="-1"
+      aria-labelledby="apiKeyModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+          <!-- Header -->
+          <div class="modal-header bg-light border-0 rounded-top">
+            <h5 class="modal-title fw-semibold" id="apiKeyModalLabel">
+              🔐 Your API Credentials
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+
+          <!-- Body -->
+          <div class="modal-body py-4 px-4">
+            <!-- API Key -->
+            <label class="form-label fw-semibold">API Key</label>
+            <small class="text-muted d-block mb-2"
+              >Store this key somewhere safe. It won't be accessible
+              later.</small
+            >
+            <div class="input-group mb-4">
+              <input
+                id="apiKeyField"
+                type="password"
+                class="form-control"
+                readonly
+              />
+              <button
+                class="btn btn-outline-secondary toggle-btn"
+                type="button"
+                data-target="apiKeyField"
+              >
+                👁️
+              </button>
+              <button
+                class="btn btn-outline-secondary copy-btn"
+                type="button"
+                data-target="apiKeyField"
+              >
+                Copy
+              </button>
+            </div>
+
+            <!-- Secret Key -->
+            <label class="form-label fw-semibold">Secret Key</label>
+            <small class="text-muted d-block mb-2"
+              >Store this key somewhere safe. It won't be accessible
+              later.</small
+            >
+            <div class="input-group mb-3">
+              <input
+                id="secretKeyField"
+                type="password"
+                class="form-control"
+                readonly
+              />
+              <button
+                class="btn btn-outline-secondary toggle-btn"
+                type="button"
+                data-target="secretKeyField"
+              >
+                👁️
+              </button>
+              <button
+                class="btn btn-outline-secondary copy-btn"
+                type="button"
+                data-target="secretKeyField"
+              >
+                Copy
+              </button>
+            </div>
+
+            <!-- Info Note -->
+            <div class="alert alert-danger mt-4" role="alert">
+              <strong>Note:</strong> Your API Key and Secret Key are generated
+              for your account. They are unique and should be kept confidential.
+              Make sure to store them securely as they will not be accessible
+              again after this session.<br />
+              You must click <strong>Set Key</strong> to apply them. If you lose
+              your keys, you will need to generate new ones.
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="modal-footer bg-light border-0 rounded-bottom">
+            <button id="setKeyBtn" class="btn btn-success">Set Key</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
       <div
         id="preferencesToast"
@@ -628,5 +743,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script type="module" src="/static/js/dashboard.js"></script>
+    <script type="module" src="/static/js/generateApiKey.js"></script>
   </body>
 </html>

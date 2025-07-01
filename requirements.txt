@@ -15,6 +15,7 @@ authlib
 itsdangerous
 python-multipart
 redis
+cryptography
 
 
 # ---- FRONTEND / SHARED ----
