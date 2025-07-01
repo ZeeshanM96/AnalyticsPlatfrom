@@ -27,11 +27,11 @@ jobs:
         pip install black flake8
 
     - name: Run Black
-      run: black --check backend/ kafka/ injestion/
+      run: black --check backend/ kafka/ injestion/ scripttotest
 
 
     - name: Run flake8
-      run: flake8 backend/ kafka/ injestion/
+      run: flake8 backend/ kafka/ injestion/ scripttotest
 
   lint-frontend:
     name: Code Quality Check - Frontend
@@ -106,6 +106,7 @@ jobs:
         REDIS_HOST: ${{ secrets.REDIS_HOST }}
         REDIS_PORT: ${{ secrets.REDIS_PORT }}
         API_KEY: ${{ secrets.API_KEY }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
       run: |
         pytest
 

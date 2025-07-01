@@ -2,6 +2,7 @@
 
 from fastapi import HTTPException
 from datetime import date, datetime
+from typing import Optional
 from backend.utils.constants import ADMIN_SOURCE_ID
 from backend.utils.dataclass_utils import AlertSummaryFilter, AlertResolutionFilter
 from backend.utils.auth_utils import encrypt_key, decrypt_key
@@ -66,14 +67,25 @@ def update_api_credential(
     )
 
 
-def get_api_credentials(cursor, source_id: int, created_by: str) -> dict:
-    cursor.execute(
-        """
-        SELECT ApiKey, SecretKey FROM ApiCredentials
-        WHERE SourceId = ? AND CreatedBy = ?
-    """,
-        (source_id, created_by),
-    )
+def get_api_credentials(
+    cursor, source_id: int, created_by: Optional[str] = None
+) -> dict:
+    if created_by is not None:
+        cursor.execute(
+            """
+            SELECT ApiKey, SecretKey FROM ApiCredentials
+            WHERE SourceId = ? AND CreatedBy = ?
+            """,
+            (source_id, created_by),
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT ApiKey, SecretKey FROM ApiCredentials
+            WHERE SourceId = ? AND CreatedBy IS NULL
+            """,
+            (source_id,),
+        )
 
     row = cursor.fetchone()
     if not row:
@@ -83,6 +95,25 @@ def get_api_credentials(cursor, source_id: int, created_by: str) -> dict:
     secret_key = decrypt_key(row[1])
 
     return {"api_key": api_key, "secret_key": secret_key}
+
+
+def get_all_keys(cursor) -> list[dict]:
+    cursor.execute("SELECT SourceId, ApiKey, SecretKey FROM ApiCredentials")
+    keys = []
+    for row in cursor.fetchall():
+        source_id = row[0]
+        try:
+            api_key = decrypt_key(row[1])
+            secret_key = decrypt_key(row[2])
+            keys.append(
+                {"source_id": source_id, "api_key": api_key, "secret_key": secret_key}
+            )
+        except Exception as e:
+            print(
+                f"Warning: Failed to decrypt credentials for source_id {source_id}: {e}"
+            )
+            continue
+    return keys
 
 
 def get_all_sources(cursor) -> list[str]:

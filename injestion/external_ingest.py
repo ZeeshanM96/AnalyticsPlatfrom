@@ -5,6 +5,9 @@ from confluent_kafka import Producer
 import json
 import os
 from dotenv import load_dotenv
+from backend.utils.db_conn import get_connection
+from backend.utils.db_utils import get_api_credentials
+from typing import Optional
 
 router = APIRouter()
 
@@ -58,13 +61,58 @@ def get_redis_client() -> Redis:
         raise RuntimeError(f"Failed to connect to Redis: {e}") from e
 
 
-def verify_api_key(api_key: str):
+def verify_api_key_with_source(
+    source_id: int, api_key: str, secret_key: str
+) -> Optional[dict]:
     redis_client = get_redis_client()
-    record = redis_client.get(f"api_key:{api_key}")
-    if not record:
-        return None
+    cache_key = f"api_key:{api_key}"
+
+    record = redis_client.get(cache_key)
+    if record:
+        try:
+            data = json.loads(record)
+            if (
+                not data.get("allowed", False)
+                or data.get("secret_key") != secret_key
+                or str(data.get("source_id")) != str(source_id)
+            ):
+                return None
+            return data
+        except json.JSONDecodeError:
+            return None
+
+    # Fallback to DB
+    conn = None
+    cursor = None
     try:
-        data = json.loads(record)
-        return data if data.get("allowed", False) else None
-    except json.JSONDecodeError:
+        conn = get_connection()
+        cursor = conn.cursor()
+        creds = get_api_credentials(cursor, int(source_id))
+    except Exception as db_error:
+        print(f"Database query failed: {db_error}")
         return None
+    finally:
+        if cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    if creds["api_key"] != api_key or creds["secret_key"] != secret_key:
+        return None
+
+    # Store in Redis
+    redis_client.setex(
+        cache_key,
+        3600,  # 1-hour TTL
+        json.dumps(
+            {"secret_key": secret_key, "source_id": int(source_id), "allowed": True}
+        ),
+    )
+
+    return {"secret_key": secret_key, "source_id": int(source_id), "allowed": True}

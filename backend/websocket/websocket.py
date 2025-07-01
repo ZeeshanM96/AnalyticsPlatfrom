@@ -8,7 +8,7 @@ from threading import Thread
 import json
 import asyncio
 from backend.utils.db_conn import get_connection
-from injestion.external_ingest import verify_api_key, get_producer
+from injestion.external_ingest import get_producer, verify_api_key_with_source
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timezone
@@ -118,18 +118,28 @@ def kafka_listener():
 async def ingest_data(websocket: WebSocket):
     await websocket.accept()
 
-    api_key = websocket.query_params.get("api_key")
-    if not api_key:
+    source_id = websocket.headers.get("x-source-id")
+    api_key = websocket.headers.get("x-api-key")
+    secret_key = websocket.headers.get("x-secret-key")
+
+    if not api_key or not secret_key or not source_id:
+        await websocket.send_text("❌ Missing required headers")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
-    client_info = verify_api_key(api_key)
+    try:
+        client_info = verify_api_key_with_source(int(source_id), api_key, secret_key)
+    except Exception as e:
+        await websocket.send_text(f"❌ Auth error: {e}")
+        await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+        return
+
     if not client_info:
+        await websocket.send_text("❌ Invalid credentials")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
-    source_ids = client_info.get("source_ids", [])
-    await websocket.send_text(f"Authenticated as {source_ids}")
+    await websocket.send_text(f"Authenticated for source_id={source_id}")
 
     try:
         while True:
@@ -144,6 +154,12 @@ async def ingest_data(websocket: WebSocket):
 
                 if "source_id" not in data:
                     await websocket.send_text("❌ Missing 'source_id' in message")
+                    continue
+
+                if str(data["source_id"]) != str(source_id):
+                    await websocket.send_text(
+                        "❌ source_id in payload does not match authenticated source_id"
+                    )
                     continue
 
                 try:
