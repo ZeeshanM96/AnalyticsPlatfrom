@@ -102,11 +102,17 @@ def get_all_keys(cursor) -> list[dict]:
     keys = []
     for row in cursor.fetchall():
         source_id = row[0]
-        api_key = decrypt_key(row[1])
-        secret_key = decrypt_key(row[2])
-        keys.append(
-            {"source_id": source_id, "api_key": api_key, "secret_key": secret_key}
-        )
+        try:
+            api_key = decrypt_key(row[1])
+            secret_key = decrypt_key(row[2])
+            keys.append(
+                {"source_id": source_id, "api_key": api_key, "secret_key": secret_key}
+            )
+        except Exception as e:
+            print(
+                f"Warning: Failed to decrypt credentials for source_id {source_id}: {e}"
+            )
+            continue
     return keys
 
 

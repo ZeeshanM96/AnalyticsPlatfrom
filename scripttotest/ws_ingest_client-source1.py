@@ -5,11 +5,11 @@ import time
 
 url = "ws://localhost:8000/ws/ingest"
 
-headers = {
+headers = [
     "x-source-id: 1",
     "x-api-key: API-KEY-FORSOURCE-1",
     "x-secret-key: SECRET-KEY-FORSOURCE-1",
-}
+]
 
 payload = {"source_id": 1, "metric_name": "Humidity", "value": 23.9}
 
@@ -28,12 +28,20 @@ def on_close(ws, close_status_code, close_msg):
 
 def on_open(ws):
     def send_loop():
-        while True:
-            ws.send(json.dumps(payload))
-            print("📤 Sent:", payload)
-            time.sleep(1)
+        try:
+            while True:
+                ws.send(json.dumps(payload))
+                print("📤 Sent:", payload)
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("🛑 Send loop interrupted")
+            ws.close()
+        except Exception as e:
+            print(f"❌ Send loop error: {e}")
+            ws.close()
 
-    threading.Thread(target=send_loop).start()
+    thread = threading.Thread(target=send_loop, daemon=True)
+    thread.start()
 
 
 if __name__ == "__main__":

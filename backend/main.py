@@ -8,6 +8,8 @@ from injestion.external_ingest import router as ingest_router
 from injestion.set_api_key import prewarm_api_credentials
 from starlette.middleware.sessions import SessionMiddleware
 import os
+import asyncio
+import logging
 from backend.api import (
     auth,
     sources,
@@ -21,10 +23,18 @@ from backend.api import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    _ = app  # Access 'app' to avoid unused variable warning
-    prewarm_api_credentials()
+    loop = asyncio.get_running_loop()
+    try:
+        await loop.run_in_executor(None, prewarm_api_credentials)
+        logger.info("✅ API credentials prewarmed successfully")
+    except Exception as e:
+        logger.critical(f"❌ Failed to prewarm API credentials: {e}")
+        raise
     yield
 
 

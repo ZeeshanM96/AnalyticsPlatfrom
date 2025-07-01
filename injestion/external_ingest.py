@@ -82,15 +82,26 @@ def verify_api_key_with_source(
             return None
 
     # Fallback to DB
+    conn = None
+    cursor = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
         creds = get_api_credentials(cursor, int(source_id))
+    except Exception as db_error:
+        print(f"Database query failed: {db_error}")
+        return None
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        if cursor is not None:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
     if creds["api_key"] != api_key or creds["secret_key"] != secret_key:
         return None

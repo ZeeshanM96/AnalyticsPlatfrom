@@ -8,7 +8,7 @@ from threading import Thread
 import json
 import asyncio
 from backend.utils.db_conn import get_connection
-from injestion.external_ingest import get_producer
+from injestion.external_ingest import get_producer, verify_api_key_with_source
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timezone
@@ -128,8 +128,6 @@ async def ingest_data(websocket: WebSocket):
         return
 
     try:
-        from injestion.external_ingest import verify_api_key_with_source
-
         client_info = verify_api_key_with_source(int(source_id), api_key, secret_key)
     except Exception as e:
         await websocket.send_text(f"❌ Auth error: {e}")
