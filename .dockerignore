@@ -6,3 +6,5 @@ __pycache__/
 .env
 .git/
 tests/
+.COPYVALIDATOR.txt
+.test.py

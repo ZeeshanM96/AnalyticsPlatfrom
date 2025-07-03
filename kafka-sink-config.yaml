@@ -1,0 +1,9 @@
+tenant: public
+namespace: default
+name: kafka-clean-sink
+inputs:
+  - persistent://public/default/clean
+archive: builtin://kafka
+sinkConfig:
+  bootstrapServers: kafka:9092
+  topic: external-topic

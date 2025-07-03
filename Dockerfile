@@ -12,9 +12,13 @@ RUN apt-get update && \
         g++ \
         && rm -rf /var/lib/apt/lists/*
 
+RUN pip install pulsar-client confluent-kafka
+
 WORKDIR /app
 
 COPY . .
+
+COPY pulsar_lib/pulsar_to_kafka.py /app/pulsar_to_kafka.py
 
 ENV PYTHONPATH=/app
 
@@ -23,8 +27,3 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 EXPOSE 8000
 
 CMD ["bash", "-c", "python injestion/set_api_key.py && uvicorn backend.main:app --host 0.0.0.0 --port 8000"]
-
-
-
-
-

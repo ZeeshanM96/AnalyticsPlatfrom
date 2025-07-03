@@ -1,0 +1,9 @@
+tenant: public
+namespace: default
+name: kafka-dirty-sink
+inputs:
+  - persistent://public/default/dirty
+archive: builtin://kafka
+sinkConfig:
+  bootstrapServers: kafka:9092
+  topic: dirty-metric

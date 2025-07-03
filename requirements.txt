@@ -16,7 +16,7 @@ itsdangerous
 python-multipart
 redis
 cryptography
-
+pulsar-client
 
 # ---- FRONTEND / SHARED ----
 httpx

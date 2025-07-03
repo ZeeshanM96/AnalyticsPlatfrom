@@ -39,5 +39,5 @@ def get_api_credentials(cursor, source_id: int, created_by: str) -> dict:
 if __name__ == "__main__":
     conn = get_connection()
     cursor = conn.cursor()
-    creds = get_api_credentials(cursor, 4, "zeeshanmajeedabdul@gmail.com")
+    creds = get_api_credentials(cursor, 3, "wardah@gmail.com")
     print(creds["api_key"], creds["secret_key"])

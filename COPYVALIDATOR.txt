@@ -1,0 +1,32 @@
+help me do all these steps once again please, class name is validate.Validator and file exists at path pulsar_lib\validate.py
+
+- Copy the updated validate.py into the Pulsar container.
+``` 
+docker cp .\pulsar_lib\validate.py pulsar:/pulsar/validate.py
+```
+- Delete the existing function (in case it’s still registered).
+```
+docker exec -it pulsar bin/pulsar-admin functions delete --tenant public --namespace default --name validate-cleanse-fn
+
+```
+- Delete any lingering package metadata (important!).
+```
+docker exec -it pulsar rm -rf /pulsar/data/functions/public/default/validate-cleanse-fn; docker exec -it pulsar rm -rf /pulsar/functions/public/default/validate-cleanse-fn
+```
+
+- Recreate the function using the updated file.
+```
+docker exec -it pulsar bin/pulsar-admin functions create --py /pulsar/validate.py --classname validate.Validator --tenant public --namespace default --name validate-cleanse-fn --inputs persistent://public/default/raw-ingest --output persistent://public/default/clean --parallelism 1
+```
+
+- Check that the function loaded correctly (no error in logs)
+```
+docker exec -it pulsar tail -n 100 logs/functions/public/default/validate-cleanse-fn/validate-cleanse-fn-0.log
+```
+
+- Trigger some data again (Run the websocket scripts)  
+
+- then Check function stats and Check data in clean and dirty topics:
+```
+docker exec -it pulsar bin/pulsar-admin functions stats --tenant public --namespace default --name validate-cleanse-fn
+```
