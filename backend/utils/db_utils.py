@@ -462,3 +462,33 @@ def fetch_alert_resolution_summary(
 
     cursor.execute(query, params)
     return cursor.fetchall()
+
+
+def create_failed_metrics_table(conn):
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            IF NOT EXISTS (
+                SELECT * FROM sysobjects
+                WHERE name='FailedMetrics' AND xtype='U'
+            )
+            CREATE TABLE FailedMetrics (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                source_id INT,
+                metric_name VARCHAR(100),
+                value FLOAT,
+                timestamp DATETIME,
+                reason NVARCHAR(500)
+            )
+            """
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"❌ Failed to create FailedMetrics table: {e}")
+        raise
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass

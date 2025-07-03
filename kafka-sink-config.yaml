@@ -1,0 +1,10 @@
+# Pular to kafka sink for external-topic
+tenant: public
+namespace: default
+name: kafka-clean-sink
+inputs:
+  - persistent://public/default/clean
+archive: builtin://kafka
+configs:
+  bootstrapServers: "kafka:9092"
+  topic: "external-topic"

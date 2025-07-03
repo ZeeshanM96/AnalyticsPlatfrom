@@ -8,8 +8,9 @@ from threading import Thread
 import json
 import asyncio
 from backend.utils.db_conn import get_connection
-from injestion.external_ingest import get_producer, verify_api_key_with_source
+from injestion.external_ingest import verify_api_key_with_source
 import os
+from pulsar_lib.pulsar_utils import get_pulsar_producer
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 
@@ -181,19 +182,18 @@ async def ingest_data(websocket: WebSocket):
                     "%Y-%m-%d %H:%M:%S.%f"
                 )
 
-                key = str(data["source_id"]).encode("utf-8")
                 value = json.dumps(data).encode("utf-8")
 
-                # Produce to Kafka
-                producer = get_producer()
                 try:
-                    producer.produce(EXTERNAL_TOPIC, key=key, value=value)
-                    producer.flush()
-                except Exception as kafka_error:
-                    await websocket.send_text(f"❌ Kafka error: {kafka_error}")
+                    pulsar_producer = get_pulsar_producer()
+                    pulsar_producer.send(value)
+                    print("✅ Published to Pulsar (raw-ingest):", data)
+                    print("✅ Pulsar sent:", value)
+                except Exception as pulsar_error:
+                    await websocket.send_text(f"❌ Pulsar error: {pulsar_error}")
                     continue
 
-                await websocket.send_text("✅ Published to Kafka")
+                await websocket.send_text("✅ Published to Pulsar (raw-ingest)")
             except Exception as e:
                 await websocket.send_text(f"❌ Error: {e}")
     except WebSocketDisconnect:
