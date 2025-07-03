@@ -107,6 +107,7 @@ jobs:
         REDIS_PORT: ${{ secrets.REDIS_PORT }}
         API_KEY: ${{ secrets.API_KEY }}
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        RAW_TOPIC: ${{ secrets.RAW_TOPIC }}
       run: |
         pytest
 
