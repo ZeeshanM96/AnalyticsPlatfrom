@@ -3,7 +3,7 @@ set -e
 
 # Start Pulsar in the background
 echo "🚀 Starting Pulsar..."
-bin/pulsar standalone &
+exec bin/pulsar standalone &
 
 # Wait for REST API to be ready, then run setup
 echo "🕒 Waiting for Pulsar REST API..."

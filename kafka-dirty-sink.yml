@@ -1,9 +1,10 @@
+# Pular to kafka sink for dirty-metric
 tenant: public
 namespace: default
 name: kafka-dirty-sink
 inputs:
   - persistent://public/default/dirty
 archive: builtin://kafka
-sinkConfig:
-  bootstrapServers: kafka:9092
-  topic: dirty-metric
+configs:
+  bootstrapServers: "kafka:9092"
+  topic: "dirty-metric"

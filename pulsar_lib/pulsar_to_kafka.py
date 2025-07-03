@@ -1,11 +1,12 @@
 # pulsar_to_kafka.py
 import os
 import time
-from pulsar import Client, ConsumerType
+from pulsar import ConsumerType
 from confluent_kafka import Producer
+from pulsar_lib.pulsar_utils import get_pulsar_client
 
 # Load settings
-PULSAR_URL = "pulsar://pulsar:6650"
+PULSAR_URL = os.getenv("PULSAR_URL", "pulsar://pulsar:6650")
 PULSAR_CLEAN_TOPIC = os.getenv("PULSAR_CLEAN_TOPIC")
 KAFKA_BROKER = os.getenv("KAFKA_BROKER")
 KAFKA_TOPIC_CLEAN = os.getenv("EXTERNAL_TOPIC")
@@ -13,6 +14,23 @@ GROUP_ID_CLEAN = os.getenv("CONSUMER_GROUP_EXTERNAL")
 PULSAR_DIRTY_TOPIC = os.getenv("PULSAR_DIRTY_TOPIC")
 KAFKA_TOPIC_DIRTY = os.getenv("FAILED_TOPIC")
 GROUP_ID_DIRTY = os.getenv("CONSUMER_GROUP_FAILED")
+
+# Validate required environment variables
+required_vars = {
+    "PULSAR_CLEAN_TOPIC": PULSAR_CLEAN_TOPIC,
+    "KAFKA_BROKER": KAFKA_BROKER,
+    "EXTERNAL_TOPIC": KAFKA_TOPIC_CLEAN,
+    "CONSUMER_GROUP_EXTERNAL": GROUP_ID_CLEAN,
+    "PULSAR_DIRTY_TOPIC": PULSAR_DIRTY_TOPIC,
+    "FAILED_TOPIC": KAFKA_TOPIC_DIRTY,
+    "CONSUMER_GROUP_FAILED": GROUP_ID_DIRTY,
+}
+
+missing_vars = [var for var, value in required_vars.items() if not value]
+if missing_vars:
+    raise ValueError(
+        f"Missing required environment variables: {', '.join(missing_vars)}"
+    )
 
 
 def setup_consumer(client, pulsar_topic, group_id):
@@ -29,25 +47,29 @@ def setup_consumer(client, pulsar_topic, group_id):
     raise RuntimeError(f"❌ Failed to subscribe to topic {pulsar_topic}")
 
 
-# Connect to Pulsar
-def get_pulsar_client(pulsar_url: str, retries: int = 10, delay: int = 3) -> Client:
-    for attempt in range(retries):
-        try:
-            return Client(pulsar_url)
-        except Exception as e:
-            print(f"🔄 Retrying Pulsar connection ({attempt + 1}/{retries}): {e}")
-            time.sleep(delay)
-    raise RuntimeError(
-        f"❌ Failed to connect to Pulsar at {pulsar_url} after {retries} attempts"
-    )
+try:
+    client = get_pulsar_client(PULSAR_URL)
+except Exception as e:
+    print(f"❌ Failed to connect to Pulsar: {e}")
+    raise
 
+try:
+    consumer_clean = setup_consumer(client, PULSAR_CLEAN_TOPIC, GROUP_ID_CLEAN)
+except Exception as e:
+    print(f"❌ Failed to subscribe to clean topic '{PULSAR_CLEAN_TOPIC}': {e}")
+    raise
 
-# Consumers for both clean and dirty
-client = get_pulsar_client(PULSAR_URL)
-consumer_clean = setup_consumer(client, PULSAR_CLEAN_TOPIC, GROUP_ID_CLEAN)
-consumer_dirty = setup_consumer(client, PULSAR_DIRTY_TOPIC, GROUP_ID_DIRTY)
-# Set up Kafka producer
-producer = Producer({"bootstrap.servers": KAFKA_BROKER})
+try:
+    consumer_dirty = setup_consumer(client, PULSAR_DIRTY_TOPIC, GROUP_ID_DIRTY)
+except Exception as e:
+    print(f"❌ Failed to subscribe to dirty topic '{PULSAR_DIRTY_TOPIC}': {e}")
+    raise
+
+try:
+    producer = Producer({"bootstrap.servers": KAFKA_BROKER})
+except Exception as e:
+    print(f"❌ Failed to initialize Kafka producer: {e}")
+    raise
 
 print(f"▶ Forwarding CLEAN: {PULSAR_CLEAN_TOPIC} → Kafka {KAFKA_TOPIC_CLEAN}")
 print(f"▶ Forwarding DIRTY: {PULSAR_DIRTY_TOPIC} → Kafka {KAFKA_TOPIC_DIRTY}")
@@ -71,12 +93,20 @@ try:
                 data = msg.data()
                 producer.produce(kafka_topic, value=data, callback=delivery_report)
                 producer.poll(0)
-                consumer.acknowledge(msg)
+                try:
+                    consumer.acknowledge(msg)
+                except Exception as ack_err:
+                    print(
+                        f"⚠️ Failed to acknowledge message on {kafka_topic}: {ack_err}"
+                    )
             except Exception as e:
-                if "Timeout" not in str(e):
-                    print(f"❌ Error in forwarding from {kafka_topic}: {e}")
+                if "timeout" in type(e).__name__.lower():
+                    continue
+                print(f"❌ Error in forwarding from {kafka_topic}: {e}")
+
 except KeyboardInterrupt:
     print("🛑 Shutting down forwarder...")
+
 finally:
     producer.flush()
     consumer_clean.close()

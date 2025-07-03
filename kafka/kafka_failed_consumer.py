@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
 from kafka.kafka_handler import wait_for_kafka_ready, get_connection_with_retry
+from backend.utils.db_utils import create_failed_metrics_table
 
 load_dotenv()
 
@@ -20,6 +21,7 @@ kafka_config = {
     "enable.auto.commit": True,
 }
 
+
 wait_for_kafka_ready(
     bootstrap_servers=KAFKA_BROKER, retries=10, delay=5, initial_delay=5
 )
@@ -27,26 +29,7 @@ consumer = Consumer(kafka_config)
 consumer.subscribe([FAILED_TOPIC])
 
 init_conn = get_connection_with_retry(retries=5, delay=5)
-init_cursor = init_conn.cursor()
-
-# Ensure FailedMetrics table exists
-init_cursor.execute(
-    """
-IF NOT EXISTS (
-    SELECT * FROM sysobjects
-    WHERE name='FailedMetrics' AND xtype='U'
-)
-CREATE TABLE FailedMetrics (
-    id INT IDENTITY(1,1) PRIMARY KEY,
-    source_id INT,
-    metric_name VARCHAR(100),
-    value FLOAT,
-    timestamp DATETIME,
-    reason NVARCHAR(500)
-)
-"""
-)
-init_conn.commit()
+create_failed_metrics_table(init_conn)
 init_conn.close()
 
 print("🟢 Kafka Consumer FOR FAILED METRICS running...")
@@ -63,7 +46,7 @@ try:
             data = json.loads(msg.value().decode("utf-8"))
             print(f"❗ Received dirty message: {data}")
 
-            conn = get_connection_with_retry()
+            conn = get_connection_with_retry(retries=5, delay=5)
             cursor = conn.cursor()
 
             raw_data = {}
