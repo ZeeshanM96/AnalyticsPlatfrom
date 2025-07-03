@@ -4,7 +4,7 @@
 
 Digital Analytics Dashboard is a full-stack, containerized web application for real-time monitoring and analytics of business events, alerts, and service metrics. The platform features secure OAuth and JWT-based authentication, role-based access, and a modern, interactive dashboard for operational intelligence and business insights.
 
-**Real-time data ingestion** is supported via a WebSocket API, allowing external sources to stream metrics directly into the system. Data is validated, authorized via API keys and secret keys (managed in Redis), and published to Kafka topics for downstream processing. Kafka consumers persist data to SQL Server and front-end, enabling live updates and historical analytics. The backend is built with FastAPI, while the frontend is a responsive HTML/CSS/JS application using Chart.js for visualizations. The stack is fully dockerized for easy deployment along with complete CI/CD pipeline
+**Real-time data ingestion** is supported via a WebSocket API, allowing external sources to stream metrics directly into the system. Data is validated, authorized via API keys and secret keys (managed in Redis), and published to Apache Pulsar. Puslar serves as data validation and data cleaning pipeline for us. Clean or valid data is injested to one topic and invalid data is injested to seperate topic. These topic are then published to Kafka topics for downstream processing. Kafka consumers persist data to SQL Server and front-end, enabling live updates and historical analytics. The backend is built with FastAPI, while the frontend is a responsive HTML/CSS/JS application using Chart.js for visualizations. The stack is fully dockerized for easy deployment along with complete CI/CD pipeline
 
 ---
 
@@ -71,6 +71,11 @@ Digital Analytics Dashboard is a full-stack, containerized web application for r
 
   Test the websocket endpoint under `scripttotest` folder. Run the scripts and make sure headers and body is set before you make a request.
 
+- **Apache Pulsar Integration:**  
+  - **Pulsar Container:** Runs Apache Pulsar with an init script that deploys a custom Pulsar Function.
+  - **Pulsar Function (`validate.Validator`):** Consumes messages from the `raw-ingest` topic, validates and cleanses them, then publishes to the `clean` and `fail` topic.
+  - **Pulsar-Kafka Forwarder:** A script `pulsar_to_kafka.py` forwards messages from Pulsar to Kafka using predefined sink configurations.
+  
 - **Kafka Integration:**  
   Ingested data is published to Kafka topics (`EXTERNAL_TOPIC`, etc.), and backend consumers process and persist the data to SQL Server.
 
@@ -88,6 +93,10 @@ Digital Analytics Dashboard is a full-stack, containerized web application for r
 Create and setup your `.env` file and update with your database connection and secret keys.
 
    ```sh
+   # FastAPI config
+    DOMAIN_SERVER=YOUR_DOMAIN_HOST_SERVER
+    DOMAIN_PORT=YOUR_DOMAIN_HOST_PORT
+
    # Database config
    DB_SERVER=YOUR-LOCALHOST-IP, YOUR TCP/IP
    DB_DATABASE="YOUR DATABASE NAME"
@@ -105,21 +114,31 @@ Create and setup your `.env` file and update with your database connection and s
    DB_TOPIC=YOUR_DBTOPIC
    WS_TOPIC=YOUR_WSTOPIC
    EXTERNAL_TOPIC=YOUR_EXTERNAL_TOPIC
+   FAILED_TOPIC=YOUR_FAILED_TOPIC
    CONSUMER_GROUP_DB=YOUR_DB_WRITE_GROUP
    CONSUMER_GROUP_WS=YOUR_WS_GROUP
    CONSUMER_GROUP_EXTERNAL=YOUR_CONSUMER_GROUP_EXTERNAL
+   CONSUMER_GROUP_FAILED=YOUR_CONSUMER_GROUP_FAILED
    PRODUCE_INTERVAL_SEC=1
    MESSAGES_PER_SECOND=1
 
    # Ingestion config
    REDIS_HOST=YOUR_REDIS_HOST
    REDIS_PORT=YOUR_REDIS_PORT
-   API_KEY=YOUR_API_KEY
 
    # Google OAuth config
    GOOGLE_CLIENT_ID = YOUR_GOOGLE_CLIENT_ID
    GOOGLE_CLIENT_SECRET = YOUR_GOOGLE_CLIENT_SECRET
    SESSION_SECRET= YOUR_SESSION_SECRET
+
+   # Encryption config
+   FERNET_KEY=YOUR_FERNET_KEY
+
+   # Pulsar config
+   PULSAR_SERVICE_URL=YOUR_PULSAR_SERVICE_URL
+   RAW_TOPIC =YOUR_RAW_TOPIC
+   PULSAR_CLEAN_TOPIC=YOUR_PULSAR_CLEAN_TOPIC
+   PULSAR_DIRTY_TOPIC=YOUR_PULSAR_DIRTY_TOPIC
    ```
    Your can regenerate a smilar schema by running `database.sql` file
 
@@ -163,14 +182,12 @@ pytest
 ### DB design:
 ![DBDesign](https://github.com/user-attachments/assets/675db00b-9468-42b6-af57-45e04794b26d)
 
-Your can regenerate a smilar schema using database.sql file
 
 ### Application Design:
 ![screencapture-127-0-0-1-8000-dashboard-2025-06-26-01_11_50_pages-to-jpg-0001](https://github.com/user-attachments/assets/15a9550b-bf6c-469d-bf53-fad9c24cf846)
 
 
 ### TODO's:
-- Add Apache Flink for ETL pipeline.
 - Add Observability & Monitoring Stack for Backend & Kafka via Prometheus/Grafana/Loki.
 
 
