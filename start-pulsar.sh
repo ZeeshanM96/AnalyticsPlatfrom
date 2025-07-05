@@ -1,3 +1,5 @@
+#!/bin/bash
+set -e
 bin/pulsar standalone &
 PULSAR_PID=$!
 
