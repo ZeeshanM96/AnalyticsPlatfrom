@@ -40,10 +40,9 @@ def validate_payload(raw_msg):
 
 class Validator:
     def process(self, input, context):
+        if isinstance(input, bytes):
+            input = input.decode("utf-8")
         is_valid, result = validate_payload(input)
-        topic = (
-            "persistent://public/default/clean"
-            if is_valid
-            else "persistent://public/default/dirty"
-        )
+        topic = PULSAR_CLEAN_TOPIC if is_valid else PULSAR_DIRTY_TOPIC
+        print("✅ Clean:", result) if is_valid else print("❌ Invalid:", result)
         context.publish(topic, json.dumps(result))
