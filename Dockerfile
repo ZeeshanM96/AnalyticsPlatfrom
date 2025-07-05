@@ -17,6 +17,8 @@ RUN pip install pulsar-client confluent-kafka
 WORKDIR /app
 
 COPY . .
+RUN apt-get update && apt-get install -y dos2unix \
+    && find /pulsar -type f -name "*.sh" -exec dos2unix {} \;
 
 COPY pulsar_lib/pulsar_to_kafka.py /app/pulsar_to_kafka.py
 
