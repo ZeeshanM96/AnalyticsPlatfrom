@@ -1,17 +1,18 @@
 import sys
 import os
+from cryptography.fernet import Fernet
+import pytest
+from fastapi.testclient import TestClient
+
+# Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from cryptography.fernet import Fernet
+# Generate a FERNET_KEY if not already set (used for encryption in tests)
 if not os.getenv("FERNET_KEY"):
     os.environ["FERNET_KEY"] = Fernet.generate_key().decode()
 
-import pytest
-from fastapi.testclient import TestClient
+# Import the FastAPI app after environment is ready
 from backend.main import app
-from dotenv import load_dotenv
-
-load_dotenv(dotenv_path=".env.local")
 
 
 @pytest.fixture
