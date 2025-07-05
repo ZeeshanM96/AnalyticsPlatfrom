@@ -78,7 +78,9 @@ async def oauth_login(
     state = secrets.token_urlsafe(16)
     request.session["oauth_state"] = state
     redirect_uri = request.url_for("oauth_callback", provider=provider)
-    return await oauth.create_client(provider).authorize_redirect(request, redirect_uri, state=state)
+    return await oauth.create_client(provider).authorize_redirect(
+        request, redirect_uri, state=state
+    )
 
 
 @router.get("/auth/{provider}/callback")
@@ -134,7 +136,9 @@ async def oauth_callback(
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT UserID, Role, SourceID FROM Users WHERE Email = ?", (email,))
+        cursor.execute(
+            "SELECT UserID, Role, SourceID FROM Users WHERE Email = ?", (email,)
+        )
         row = cursor.fetchone()
 
         if row:
@@ -163,24 +167,31 @@ async def complete_signup(request: Request):
     if not email or not role or not source_name:
         raise HTTPException(status_code=400, detail="Missing required fields")
 
-    conn = get_connection()
-    cursor = conn.cursor()
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
 
-    # Lookup SourceID
-    cursor.execute("SELECT SourceID FROM Sources WHERE SourceName = ?", (source_name,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=400, detail="Invalid source name")
-    source_id = row[0]
+        # Lookup SourceID
+        cursor.execute(
+            "SELECT SourceID FROM Sources WHERE SourceName = ?", (source_name,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=400, detail="Invalid source name")
+        source_id = row[0]
 
-    # Insert and retrieve UserID in one go
-    cursor.execute(
-        "INSERT INTO Users (Email, Role, SourceID) OUTPUT INSERTED.UserID VALUES (?, ?, ?)",
-        (email, role, source_id),
-    )
-    user_id = cursor.fetchone()[0]
-    conn.commit()
+        # Insert and retrieve UserID in one go
+        cursor.execute(
+            "INSERT INTO Users (Email, Role, SourceID) OUTPUT INSERTED.UserID VALUES (?, ?, ?)",
+            (email, role, source_id),
+        )
+        user_id = cursor.fetchone()[0]
+        conn.commit()
 
-    token = create_jwt_token(user_id, email)
+        token = create_jwt_token(user_id, email)
 
-    return RedirectResponse(f"/dashboard?token={token}", status_code=303)
+        return RedirectResponse(f"/dashboard?token={token}", status_code=303)
+    finally:
+        if conn:
+            conn.close()
