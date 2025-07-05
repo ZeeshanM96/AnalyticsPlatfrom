@@ -1,3 +1,11 @@
+import os
+from dotenv import load_dotenv
+
+# Load test environment variables early if running tests
+if os.getenv("PYTEST_CURRENT_TEST") or "pytest" in os.getenv("_", ""):
+    load_dotenv(dotenv_path=".env.local")
+else:
+    load_dotenv(dotenv_path=".env")
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
