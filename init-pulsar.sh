@@ -8,6 +8,10 @@ until curl -sSf http://localhost:8080/admin/v2/clusters > /dev/null; do
 done
 echo "✅ Pulsar is ready."
 
+# Create output topic
+echo "📌 Creating output topic 'clean'..."
+bin/pulsar-admin topics create persistent://public/default/clean || true
+
 # Deploy validate-cleanse-fn
 echo "📦 Deploying validate-cleanse-fn..."
 

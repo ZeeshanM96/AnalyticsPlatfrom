@@ -1,11 +1,7 @@
-#!/bin/bash
-set -e
+bin/pulsar standalone &
+PULSAR_PID=$!
 
-# Start Pulsar in the background
-echo "🚀 Starting Pulsar..."
-exec bin/pulsar standalone &
-
-# Wait for REST API to be ready, then run setup
+# Wait for REST API to be ready
 echo "🕒 Waiting for Pulsar REST API..."
 until curl -sSf http://localhost:8080/admin/v2/clusters > /dev/null; do
   echo "⏳ Pulsar not ready yet..."
@@ -14,7 +10,7 @@ done
 echo "✅ Pulsar is ready!"
 
 # Run init script
-bash /pulsar/init-pulsar.sh &
+bash /pulsar/init-pulsar.sh
 
-# Wait for Pulsar to keep running
-wait
+# Keep the container running by waiting on Pulsar
+wait $PULSAR_PID
