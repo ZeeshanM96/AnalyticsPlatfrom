@@ -1,6 +1,24 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  const socialButtons = document.querySelector(".social-btn-wrapper");
+  const authTabs = document.getElementById("authTabs");
+
+  // Setup tab-switch handler
+  if (authTabs) {
+    authTabs.addEventListener("shown.bs.tab", (event) => {
+      const activeTabId = event.target.getAttribute("data-bs-target");
+
+      if (activeTabId === "#oauth-setup") {
+        socialButtons?.classList.add("d-none");
+      } else {
+        socialButtons?.classList.remove("d-none");
+      }
+    });
+  }
+
+  // OAuth redirect handling
   const urlParams = new URLSearchParams(window.location.search);
   const email = urlParams.get("email");
+  const provider = urlParams.get("provider");
 
   if (window.location.pathname.includes("login.html") && email) {
     const oauthTabBtn = document.querySelector("#oauth-tab");
@@ -16,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const oauthTab = document.getElementById("oauth-setup");
     oauthTab.classList.add("show", "active");
 
-    document.getElementById("googleLoginBlock")?.classList.add("d-none");
+    socialButtons?.classList.add("d-none");
 
     document.getElementById("email").value = email;
 
@@ -38,7 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       alert("Could not load sources.");
     }
 
-    // Handle form submission
+    // Form submission for OAuth completion
     document
       .getElementById("oauthCompleteForm")
       .addEventListener("submit", async (e) => {
@@ -52,7 +70,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         formData.append("source", source);
 
         try {
-          const res = await fetch("/auth/google/complete-signup", {
+          const res = await fetch("/auth/oauth/complete-signup", {
             method: "POST",
             body: formData,
           });

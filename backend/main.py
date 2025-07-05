@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from backend.websocket import websocket
-from backend.api.google_oauth import router as google_auth_router
+from backend.api.oauth import router as oauth_router
 from injestion.external_ingest import router as ingest_router
 from injestion.set_api_key import prewarm_api_credentials
 from starlette.middleware.sessions import SessionMiddleware
@@ -72,6 +72,6 @@ app.include_router(services.router)
 app.include_router(preferences.router)
 app.include_router(metrics.router)
 app.include_router(websocket.router)
-app.include_router(google_auth_router)
+app.include_router(oauth_router)
 app.include_router(ingest_router)
 app.include_router(apikey.router)

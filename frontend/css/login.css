@@ -26,33 +26,70 @@ h2 {
   font-weight: 700;
   border-radius: 5px;
   padding: 12px;
-  transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgb(0 0 0 / 5%);
   text-decoration: none;
   margin: 5px;
   height: 110px;
   width: 30%;
   vertical-align: middle;
+
+  /* Required for background fill animation */
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transition: color 0.3s ease;
 }
 
+/* Image inside button */
 .social-btn img {
   width: 30px;
   height: 30px;
   transition: transform 0.3s ease;
   vertical-align: middle;
+  position: relative;
+  z-index: 2;
 }
 
+/* Scale icon on hover */
 .social-btn:hover img {
   transform: scale(1.05);
 }
+
+/* Button text layering */
+.social-btn span {
+  position: relative;
+  z-index: 2;
+}
+
+/* Animated background overlay */
+.social-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  z-index: 0;
+  transition: width 0.35s ease;
+}
+
+/* Slide fill on hover */
+.social-btn:hover::after {
+  width: 100%;
+}
+
+/* Brand-specific button styles */
 
 .google-btn {
   border-color: #4285f4;
   color: #4285f4;
 }
 
+.google-btn::after {
+  background-color: #4285f4;
+}
+
 .google-btn:hover {
-  background-color: #4080e7;
   color: white;
 }
 
@@ -61,8 +98,11 @@ h2 {
   color: #333;
 }
 
-.github-btn:hover {
+.github-btn::after {
   background-color: #333;
+}
+
+.github-btn:hover {
   color: white;
 }
 
@@ -71,7 +111,10 @@ h2 {
   color: #0072c6;
 }
 
-.outlook-btn:hover {
+.outlook-btn::after {
   background-color: #0072c6;
+}
+
+.outlook-btn:hover {
   color: white;
 }
