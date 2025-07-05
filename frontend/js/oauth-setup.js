@@ -18,7 +18,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // OAuth redirect handling
   const urlParams = new URLSearchParams(window.location.search);
   const email = urlParams.get("email");
-  const provider = urlParams.get("provider");
 
   if (window.location.pathname.includes("login.html") && email) {
     const oauthTabBtn = document.querySelector("#oauth-tab");

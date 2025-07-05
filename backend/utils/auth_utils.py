@@ -79,6 +79,7 @@ def validate_date_range(from_date: str, to_date: str, date_format: str = "%Y-%m-
             status_code=400, detail="From date cannot be after To date."
         )
 
+
 def clean_guest_email(upn: str) -> str:
     if "#EXT#" in upn:
         return upn.split("#EXT#")[0].replace("_", "@")

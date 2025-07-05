@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from backend.utils.auth_utils import create_jwt_token, clean_guest_email
 import os
 from typing import Literal
+import secrets
 
 router = APIRouter()
 
@@ -19,6 +20,23 @@ GITHUB_CLIENT_SECRET = os.environ.get("GITHUB_CLIENT_SECRET")
 OUTLOOK_CLIENT_ID = os.environ.get("OUTLOOK_CLIENT_ID")
 OUTLOOK_CLIENT_SECRET = os.environ.get("OUTLOOK_CLIENT_SECRET")
 OUTLOOK_TENANT_ID = os.environ.get("OUTLOOK_TENANT_ID")
+BASE_URL = os.environ.get("BASE_URL")
+
+required_env_vars = {
+    "GOOGLE_CLIENT_ID": GOOGLE_CLIENT_ID,
+    "GOOGLE_CLIENT_SECRET": GOOGLE_CLIENT_SECRET,
+    "GITHUB_CLIENT_ID": GITHUB_CLIENT_ID,
+    "GITHUB_CLIENT_SECRET": GITHUB_CLIENT_SECRET,
+    "OUTLOOK_CLIENT_ID": OUTLOOK_CLIENT_ID,
+    "OUTLOOK_CLIENT_SECRET": OUTLOOK_CLIENT_SECRET,
+    "OUTLOOK_TENANT_ID": OUTLOOK_TENANT_ID,
+}
+
+missing_vars = [var for var, value in required_env_vars.items() if not value]
+if missing_vars:
+    raise RuntimeError(
+        f"Missing required environment variables for OAuth: {', '.join(missing_vars)}"
+    )
 
 oauth.register(
     name="google",
@@ -42,7 +60,10 @@ oauth.register(
     name="outlook",
     client_id=OUTLOOK_CLIENT_ID,
     client_secret=OUTLOOK_CLIENT_SECRET,
-    server_metadata_url=f"https://login.microsoftonline.com/{OUTLOOK_TENANT_ID}/v2.0/.well-known/openid-configuration",
+    server_metadata_url=(
+        f"https://login.microsoftonline.com/"
+        f"{OUTLOOK_TENANT_ID}/v2.0/.well-known/openid-configuration"
+    ),
     api_base_url="https://graph.microsoft.com/v1.0/",
     client_kwargs={
         "scope": "openid email profile User.Read",
@@ -51,20 +72,28 @@ oauth.register(
 
 
 @router.get("/auth/{provider}")
-async def oauth_login(request: Request, provider: Literal["google", "github", "outlook"]):
+async def oauth_login(
+    request: Request, provider: Literal["google", "github", "outlook"]
+):
+    state = secrets.token_urlsafe(16)
+    request.session["oauth_state"] = state
     redirect_uri = request.url_for("oauth_callback", provider=provider)
-    return await oauth.create_client(provider).authorize_redirect(request, redirect_uri)
+    return await oauth.create_client(provider).authorize_redirect(request, redirect_uri, state=state)
 
 
 @router.get("/auth/{provider}/callback")
-async def oauth_callback(request: Request, provider: Literal["google", "github", "outlook"]):
+async def oauth_callback(
+    request: Request, provider: Literal["google", "github", "outlook"]
+):
     try:
         client = oauth.create_client(provider)
         token = await client.authorize_access_token(request)
         if provider == "google":
             user_info = token.get("userinfo")
             if not user_info or "email" not in user_info:
-                raise HTTPException(status_code=400, detail="No email found in Google profile")
+                raise HTTPException(
+                    status_code=400, detail="No email found in Google profile"
+                )
             email = user_info["email"]
 
         elif provider == "github":
@@ -77,7 +106,7 @@ async def oauth_callback(request: Request, provider: Literal["google", "github",
             email = next((e["email"] for e in emails_info if e.get("primary")), None)
             if not email:
                 raise HTTPException(status_code=400, detail="Primary email not found")
-        
+
         elif provider == "outlook":
             user_data = await client.get("me", token=token)
             user_info = user_data.json()
@@ -86,28 +115,43 @@ async def oauth_callback(request: Request, provider: Literal["google", "github",
             email = clean_guest_email(raw_email)
 
             if not email:
-                raise HTTPException(status_code=400, detail="Email not found in Outlook profile")
+                raise HTTPException(
+                    status_code=400, detail="Email not found in Outlook profile"
+                )
 
         else:
             raise HTTPException(status_code=400, detail="Unsupported provider")
 
     except Exception as e:
         print("OAuth callback error:", str(e))
-        return JSONResponse(status_code=400, content={"detail": f"{provider.capitalize()} login failed: {str(e)}"})
+        return JSONResponse(
+            status_code=400,
+            content={"detail": f"{provider.capitalize()} login failed: {str(e)}"},
+        )
 
-    conn = get_connection()
-    cursor = conn.cursor()
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT UserID, Role, SourceID FROM Users WHERE Email = ?", (email,))
-    row = cursor.fetchone()
+        cursor.execute("SELECT UserID, Role, SourceID FROM Users WHERE Email = ?", (email,))
+        row = cursor.fetchone()
 
-    if row:
-        user_id, role, source_id = row
-        token = create_jwt_token(user_id, email)
-        return RedirectResponse(f"http://localhost:8000/dashboard?token={token}", status_code=303)
+        if row:
+            user_id = row[0]
+            token = create_jwt_token(user_id, email)
+            return RedirectResponse(
+                f"{BASE_URL}/dashboard?token={token}", status_code=303
+            )
 
-    # If user doesn't exist, redirect to signup completion
-    return RedirectResponse(f"http://localhost:8000/html/login.html?email={email}&provider={provider}")
+        # If user doesn't exist, redirect to signup completion
+        return RedirectResponse(
+            f"{BASE_URL}/html/login.html?email={email}&provider={provider}"
+        )
+    finally:
+        if conn:
+            conn.close()
+
 
 @router.post("/auth/oauth/complete-signup")
 async def complete_signup(request: Request):
