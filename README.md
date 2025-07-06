@@ -23,6 +23,8 @@ Digital Analytics Dashboard is a full-stack, containerized web application for r
 - **CI/CD with GitHub Actions**
 - **Real-time Data Updates via WebSockets**
 - **Modular FastAPI Backend** with clear separation of API, ingestion, and Kafka logic
+- **Loki/Grafana Logs** for monitoring docker containers
+
 
 ---
 
@@ -38,6 +40,7 @@ Digital Analytics Dashboard is a full-stack, containerized web application for r
 - **Linting/Formatting:** Flake8, Black, Prettier, ESLint, Stylelint
 - **Containerization:** Docker, Docker Compose
 - **CI/CD:** GitHub Actions
+- **Monitoring:** Loki/Grafana
 
 ---
 
@@ -98,14 +101,14 @@ Create and setup your `.env` file and update with your database connection and s
     DOMAIN_PORT=YOUR_DOMAIN_HOST_PORT
 
    # Database config
-   DB_SERVER=YOUR-LOCALHOST-IP, YOUR TCP/IP
-   DB_DATABASE="YOUR DATABASE NAME"
-   DB_USER="YOUR USERNAME"
-   DB_PASSWORD="YOUR PASSWORD"
+   DB_SERVER=YOUR_LOCALHOST_IP, YOUR_TCP/IP
+   DB_DATABASE="YOUR_DATABASE_NAME"
+   DB_USER="YOUR_USERNAME"
+   DB_PASSWORD="YOUR_PASSWORD"
    ACCEPT_EULA=Y
 
    # JWT config
-   JWT_SECRET=YOUR JWT SECRET
+   JWT_SECRET=YOUR_JWT_SECRET
    JWT_ALGORITHM=HS256
    JWT_EXPIRATION_MINUTES=60
 
@@ -163,6 +166,7 @@ Create and setup your `.env` file and update with your database connection and s
 
 - The backend will be available at [http://localhost:8000](http://localhost:8000)
 - The frontend is served via FastAPI static routes (e.g., `/html/login.html`, `/html/dashboard.html`)
+- Loki/Grafana logs can be monitored at [http://localhost:3000](http://localhost:3000) in the dashboard section, filter with container or level.
 
 5. **Run Tests (Optional)**
 
