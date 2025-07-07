@@ -55,7 +55,6 @@ except RuntimeError:
 
 @router.websocket("/ws/data")
 async def websocket_endpoint(websocket: WebSocket):
-    print("WebSocket connection attempt")
     token = websocket.query_params.get("token")
     if not token:
         await websocket.close(code=1008)
@@ -93,26 +92,6 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"WebSocket disconnected: {email}")
     finally:
         connected_clients.remove(client)
-
-
-def kafka_listener():
-    while True:
-        msg = kafka_consumer.poll(1.0)
-        if msg is None or msg.error():
-            continue
-        try:
-            data = json.loads(msg.value())
-            partition = msg.partition()
-
-            print(f"✅ WebSocket Kafka msg from partition {partition}: {data}")
-            # Broadcast to all relevant WebSocket clients
-            for client in connected_clients:
-                if client["source_id"] == data["source_id"]:
-                    asyncio.run_coroutine_threadsafe(
-                        client["socket"].send_json(data), event_loop
-                    )
-        except Exception as e:
-            print(f"Kafka/WebSocket broadcast error: {e}")
 
 
 @router.websocket("/ws/ingest")
@@ -198,6 +177,26 @@ async def ingest_data(websocket: WebSocket):
                 await websocket.send_text(f"❌ Error: {e}")
     except WebSocketDisconnect:
         print("Client disconnected")
+
+
+def kafka_listener():
+    while True:
+        msg = kafka_consumer.poll(1.0)
+        if msg is None or msg.error():
+            continue
+        try:
+            data = json.loads(msg.value())
+            partition = msg.partition()
+
+            print(f"✅ WebSocket Kafka msg from partition {partition}: {data}")
+            # Broadcast to all relevant WebSocket clients
+            for client in connected_clients:
+                if client["source_id"] == data["source_id"]:
+                    asyncio.run_coroutine_threadsafe(
+                        client["socket"].send_json(data), event_loop
+                    )
+        except Exception as e:
+            print(f"Kafka/WebSocket broadcast error: {e}")
 
 
 # Start Kafka listener in background thread

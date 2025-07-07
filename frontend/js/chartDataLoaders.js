@@ -254,6 +254,29 @@ export async function loadDashboardStats() {
     const alerts = await alertsRes.json();
     document.getElementById("alertsToday").textContent = alerts.today;
     document.getElementById("alertsYesterday").textContent = alerts.yesterday;
+
+    animateValue(
+      document.getElementById("batchTodayCount"),
+      0,
+      batches.yesterday,
+    );
+    animateValue(
+      document.getElementById("batchYesterdayCount"),
+      0,
+      batches.yesterday,
+    );
+    animateValue(
+      document.getElementById("runningServices"),
+      0,
+      services.running,
+    );
+    animateValue(document.getElementById("totalServices"), 0, services.total);
+    animateValue(document.getElementById("alertsToday"), 0, alerts.today);
+    animateValue(
+      document.getElementById("alertsYesterday"),
+      0,
+      alerts.yesterday,
+    );
   } catch (err) {
     console.error("Failed to load dashboard stats:", err);
     showAlert("Error loading dashboard summary.");
@@ -272,4 +295,28 @@ export function getSelectedEventTypes() {
     "#eventTypesList input[type='checkbox']:checked",
   );
   return Array.from(checkboxes).map((cb) => cb.value);
+}
+
+function animateValue(element, start, end, duration = 1000) {
+  if (isNaN(end) || isNaN(start)) return;
+
+  const range = end - start;
+
+  // No need to animate if start and end are the same
+  if (range === 0) {
+    element.textContent = end;
+    return;
+  }
+
+  const increment = range > 0 ? 1 : -1;
+  const stepTime = Math.max(Math.floor(duration / Math.abs(range)), 20);
+  let current = start;
+
+  const timer = setInterval(() => {
+    current += increment;
+    element.textContent = current;
+    if (current === end) {
+      clearInterval(timer);
+    }
+  }, stepTime);
 }
